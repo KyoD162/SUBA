@@ -1,0 +1,18 @@
+{
+  "extends": "@tsconfig/react-native/tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2020"],
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/components/*": ["src/components/*"],
+      "@/screens/*": ["src/screens/*"],
+      "@/navigation/*": ["src/navigation/*"],
+      "@/services/*": ["src/services/*"]
+    }
+  },
+  "include": ["./src", "app.config.ts", "App.tsx", "index.js", "src/types/**/*.d.ts"]
+}
