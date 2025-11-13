@@ -1,18 +1,21 @@
 {
-  "extends": "@tsconfig/react-native/tsconfig.json",
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "jsx": "react-jsx",
-    "lib": ["ES2020"],
-    "types": ["node"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+  "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["src/components/*"],
-      "@/screens/*": ["src/screens/*"],
-      "@/navigation/*": ["src/navigation/*"],
-      "@/services/*": ["src/services/*"]
+      "@/*": ["src/*", "app/*"]
     }
   },
-  "include": ["./src", "app.config.ts", "App.tsx", "index.js", "src/types/**/*.d.ts"]
+  "exclude": [
+    "node_modules",
+    "app",
+    "web",
+    "src/screens/main/RoutesScreen.tsx"
+  ]
 }

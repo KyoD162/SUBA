@@ -1,13 +1,17 @@
-import 'react-native-gesture-handler';
-import React from 'react';
-import { StatusBar } from 'expo-status-bar';
-import AppNavigator from '@/navigation/index';
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { SafeAreaProvider } from "react-native-safe-area-context"
+import { PaperProvider } from "react-native-paper"
+import { RootNavigator } from "./src/navigation/RootNavigator"
+import { SUBA_THEME } from "./src/theme/paperTheme"
 
 export default function App() {
   return (
-    <>
-      <StatusBar style="auto" />
-      <AppNavigator />
-    </>
-  );
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <PaperProvider theme={SUBA_THEME}>
+          <RootNavigator />
+        </PaperProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  )
 }
