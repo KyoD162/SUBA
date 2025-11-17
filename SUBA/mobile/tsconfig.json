@@ -1,0 +1,21 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+  "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*", "app/*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "app",
+    "web",
+    "src/screens/main/RoutesScreen.tsx"
+  ]
+}

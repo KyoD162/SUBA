@@ -1,0 +1,7 @@
+node_modules
+npm-debug.log*
+Dockerfile
+.dockerignore
+dist
+src/__tests__
+.env

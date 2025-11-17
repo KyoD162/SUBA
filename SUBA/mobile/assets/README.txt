@@ -1,0 +1,1 @@
+Placeholder assets folder. Add icon.png, splash.png, adaptive-icon.png here.

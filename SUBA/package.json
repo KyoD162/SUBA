@@ -1,0 +1,36 @@
+{
+  "name": "suba",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "api",
+    "mobile"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,mobile -c blue,green \"npm run --workspace=api dev\" \"npm run --workspace=mobile start\"",
+    "dev:api": "npm run --workspace=api dev",
+    "dev:mobile": "npm run --workspace=mobile start",
+    "build": "npm run --workspace=api build",
+    "build:api": "npm run --workspace=api build",
+    "test": "npm run --workspace=api test",
+    "lint": "eslint .",
+    "lint:api": "npm run --workspace=api lint",
+    "lint:mobile": "npm run --workspace=mobile lint",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-react": "^7.35.2",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-native": "^4.1.0",
+    "prettier": "^3.3.3"
+  },
+  "dependencies": {
+    "mongoose": "^8.19.4"
+  }
+}
