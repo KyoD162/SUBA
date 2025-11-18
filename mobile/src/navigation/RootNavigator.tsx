@@ -21,6 +21,7 @@ import HomeScreen from "../screens/main/HomeScreen"
 import RoutesScreen from "../screens/main/RoutesMapScreen"
 import TicketsScreen from "../screens/main/TicketsScreen"
 import ProfileScreen from "../screens/main/ProfileScreen"
+import AdminPanel from "../screens/admin/AdminPanel"
 
 // Detail screens
 import RouteDetailScreen from "../screens/details/RouteDetailScreen"
@@ -39,6 +40,7 @@ function MainTabNavigator() {
         else if (route.name === "Routes") iconName = "navigate-outline"
         else if (route.name === "Tickets") iconName = "ticket-outline"
         else if (route.name === "Profile") iconName = "person-outline"
+        else if (route.name === "Admin") iconName = "shield-outline"
         return {
           headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name={iconName} size={scale(size)} color={color} />,
@@ -68,6 +70,7 @@ function MainTabNavigator() {
       <Tab.Screen name="Routes" component={RoutesScreen} options={{ title: "Rutas" }} />
       <Tab.Screen name="Tickets" component={TicketsScreen} options={{ title: "Mis Tickets" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil" }} />
+      <Tab.Screen name="Admin" component={AdminPanel} options={{ title: "Admin" }} />
     </Tab.Navigator>
   )
 }

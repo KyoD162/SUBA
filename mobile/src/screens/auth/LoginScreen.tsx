@@ -28,6 +28,20 @@ export default function LoginScreen() {
     }, 1000)
   }
 
+  const handleAdminAccess = async () => {
+    if (loading) return
+    setLoading(true)
+    setTimeout(() => {
+      setLoading(false)
+      // Autenticación simulada y navegar al tab Admin
+      signIn()
+      // Esperar al cambio de árbol antes de navegar al nested tab
+      setTimeout(() => {
+        navigation.navigate("MainApp", { screen: "Admin" })
+      }, 0)
+    }, 300)
+  }
+
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -109,6 +123,19 @@ export default function LoginScreen() {
           </View>
           <TouchableOpacity style={styles.altButton}>
             <Text style={styles.altButtonText}>Inicia sesión acá</Text>
+          </TouchableOpacity>
+
+          {/* Acceso directo al panel Administrador (solo frontend/dev) */}
+          <TouchableOpacity
+            style={[styles.altButton, { marginTop: SPACING.md, borderColor: COLORS.success }]}
+            onPress={handleAdminAccess}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={COLORS.success} />
+            ) : (
+              <Text style={[styles.altButtonText, { color: COLORS.success, fontWeight: "700" }]}>Entrar como administrador</Text>
+            )}
           </TouchableOpacity>
         </View>
 

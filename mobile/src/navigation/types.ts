@@ -15,6 +15,7 @@ export type MainTabParamList = {
   Routes: undefined
   Tickets: undefined
   Profile: undefined
+  Admin: undefined
 }
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>
