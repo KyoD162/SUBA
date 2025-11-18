@@ -15,27 +15,28 @@ export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
+  // Estados separados para evitar que ambos botones muestren loading simultáneamente
+  const [userLoading, setUserLoading] = useState(false)
+  const [adminLoading, setAdminLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  const handleLogin = async () => {
-    setLoading(true)
-    // Simulate API call
+  const handleLogin = () => {
+    if (userLoading || adminLoading) return
+    setUserLoading(true)
+    // Simulación de API
     setTimeout(() => {
-      setLoading(false)
-      // Mark user as authenticated and show main app
-      signIn()
+      setUserLoading(false)
+      signIn("user")
     }, 1000)
   }
 
-  const handleAdminAccess = async () => {
-    if (loading) return
-    setLoading(true)
+  const handleAdminAccess = () => {
+    if (userLoading || adminLoading) return
+    setAdminLoading(true)
     setTimeout(() => {
-      setLoading(false)
-      // Autenticación simulada y navegar al tab Admin
-      signIn()
-      // Esperar al cambio de árbol antes de navegar al nested tab
+      setAdminLoading(false)
+      signIn("admin")
+      // Navegar al tab Admin tras autenticación
       setTimeout(() => {
         navigation.navigate("MainApp", { screen: "Admin" })
       }, 0)
@@ -68,7 +69,7 @@ export default function LoginScreen() {
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
-                editable={!loading}
+                editable={!userLoading && !adminLoading}
               />
             </View>
           </View>
@@ -85,7 +86,7 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                editable={!loading}
+                editable={!userLoading && !adminLoading}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Ionicons
@@ -104,11 +105,11 @@ export default function LoginScreen() {
 
           {/* Login Button */}
           <TouchableOpacity
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+            style={[styles.loginButton, (userLoading || adminLoading) && styles.loginButtonDisabled]}
             onPress={handleLogin}
-            disabled={loading}
+            disabled={userLoading || adminLoading}
           >
-            {loading ? (
+            {userLoading ? (
               <ActivityIndicator color={COLORS.textInverse} />
             ) : (
               <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
@@ -129,9 +130,9 @@ export default function LoginScreen() {
           <TouchableOpacity
             style={[styles.altButton, { marginTop: SPACING.md, borderColor: COLORS.success }]}
             onPress={handleAdminAccess}
-            disabled={loading}
+            disabled={userLoading || adminLoading}
           >
-            {loading ? (
+            {adminLoading ? (
               <ActivityIndicator color={COLORS.success} />
             ) : (
               <Text style={[styles.altButtonText, { color: COLORS.success, fontWeight: "700" }]}>Entrar como administrador</Text>

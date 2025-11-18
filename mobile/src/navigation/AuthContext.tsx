@@ -1,8 +1,11 @@
 import React, { createContext, useContext } from "react"
 
+export type UserRole = "user" | "admin"
+
 type AuthContextValue = {
   isAuthenticated: boolean
-  signIn: () => void
+  role: UserRole
+  signIn: (role?: UserRole) => void
   signOut: () => void
 }
 

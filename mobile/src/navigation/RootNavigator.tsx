@@ -10,7 +10,7 @@ import { scale, verticalScale, responsiveFont } from "../utils/responsive"
 
 import type { RootStackParamList, MainTabParamList } from "./types"
 import { COLORS, SPACING } from "../theme"
-import { AuthContext } from "./AuthContext"
+import { AuthContext, UserRole } from "./AuthContext"
 import { TicketsProvider } from "./TicketsContext"
 
 // Auth screens
@@ -32,6 +32,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>()
 
 function MainTabNavigator() {
   const insets = useSafeAreaInsets()
+  const auth = React.useContext(AuthContext)
   return (
     <Tab.Navigator
       screenOptions={({ route }) => {
@@ -70,21 +71,31 @@ function MainTabNavigator() {
       <Tab.Screen name="Routes" component={RoutesScreen} options={{ title: "Rutas" }} />
       <Tab.Screen name="Tickets" component={TicketsScreen} options={{ title: "Mis Tickets" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil" }} />
-      <Tab.Screen name="Admin" component={AdminPanel} options={{ title: "Admin" }} />
+      {auth?.role === "admin" && (
+        <Tab.Screen name="Admin" component={AdminPanel} options={{ title: "Admin" }} />
+      )}
     </Tab.Navigator>
   )
 }
 
 export function RootNavigator() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false)
+  const [role, setRole] = React.useState<UserRole>("user")
 
   const authValue = React.useMemo(
     () => ({
       isAuthenticated,
-      signIn: () => setIsAuthenticated(true),
-      signOut: () => setIsAuthenticated(false),
+      role,
+      signIn: (r: UserRole = "user") => {
+        setRole(r)
+        setIsAuthenticated(true)
+      },
+      signOut: () => {
+        setIsAuthenticated(false)
+        setRole("user")
+      },
     }),
-    [isAuthenticated]
+    [isAuthenticated, role]
   )
 
   return (
