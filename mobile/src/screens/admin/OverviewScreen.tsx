@@ -2,17 +2,18 @@
 
 import React from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { StyleSheet, View } from "react-native"
+import { StyleSheet, View, ScrollView } from "react-native"
 import { COLORS, globalStyles, SPACING } from "../../theme"
 import AdminHeader from "../../components/AdminHeader"
 import { StatCard } from "../../components/StatCard"
 import { CurrencyDisplay } from "../../components/CurrencyDisplay"
 import UserDistributionChart from "../../components/UserDistributionChart"
+import { RecentActivityTable } from "../../components/RecentActivityTable"
 
 const OverviewScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <View style={globalStyles.screenPadding}>
+      <ScrollView contentContainerStyle={globalStyles.screenPadding}>
         <AdminHeader name="Admin" />
         {/* Grid de estadísticas */}
         <View style={styles.statsGrid}>
@@ -54,7 +55,8 @@ const OverviewScreen: React.FC = () => {
           />
         </View>
         <UserDistributionChart />
-      </View>
+        <RecentActivityTable />
+      </ScrollView>
     </SafeAreaView>
   )
 }

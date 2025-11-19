@@ -30,7 +30,7 @@ const AdminPanel: React.FC = () => {
     <Tab.Navigator
       screenOptions={({ route }) => {
         let iconName: keyof typeof Ionicons.glyphMap = "grid-outline"
-        if (route.name === "Overview") iconName = "speedometer-outline"
+        if (route.name === "Overview") iconName = "stats-chart-outline"
         else if (route.name === "Rutas") iconName = "navigate-outline"
         else if (route.name === "Conductores") iconName = "car-outline"
         else if (route.name === "Usuarios") iconName = "people-outline"
