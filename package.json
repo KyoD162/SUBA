@@ -31,6 +31,7 @@
     "prettier": "^3.3.3"
   },
   "dependencies": {
-    "mongoose": "^8.19.4"
+    "mongoose": "^8.19.4",
+    "react-native-svg": "15.12.1"
   }
 }
