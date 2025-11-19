@@ -21,7 +21,6 @@ import HomeScreen from "../screens/main/HomeScreen"
 import RoutesScreen from "../screens/main/RoutesMapScreen"
 import TicketsScreen from "../screens/main/TicketsScreen"
 import ProfileScreen from "../screens/main/ProfileScreen"
-import AdminPanel from "../screens/main/AdminPanel"
 
 // Detail screens
 import RouteDetailScreen from "../screens/details/RouteDetailScreen"
@@ -70,9 +69,6 @@ function MainTabNavigator() {
       <Tab.Screen name="Routes" component={RoutesScreen} options={{ title: "Rutas" }} />
       <Tab.Screen name="Tickets" component={TicketsScreen} options={{ title: "Mis Tickets" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil" }} />
-      {auth?.isAdmin && (
-        <Tab.Screen name="Admin" component={AdminPanel} options={{ title: "Admin" }} />
-      )}
     </Tab.Navigator>
   )
 }

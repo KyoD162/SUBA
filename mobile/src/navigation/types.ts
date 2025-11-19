@@ -8,6 +8,7 @@ export type RootStackParamList = {
   RouteDetail: { routeId: string }
   PaymentCheckout: { packageId: string }
   Register: undefined
+  Admin: undefined
 }
 
 export type MainTabParamList = {
@@ -15,7 +16,6 @@ export type MainTabParamList = {
   Routes: undefined
   Tickets: undefined
   Profile: undefined
-  Admin: undefined
 }
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>

@@ -17,30 +17,16 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("")
   // Estados separados para evitar que ambos botones muestren loading simultáneamente
   const [userLoading, setUserLoading] = useState(false)
-  const [adminLoading, setAdminLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
   const handleLogin = () => {
-    if (userLoading || adminLoading) return
+    if (userLoading) return
     setUserLoading(true)
     // Simulación de API
     setTimeout(() => {
       setUserLoading(false)
-      signIn("user")
+      signIn()
     }, 1000)
-  }
-
-  const handleAdminAccess = () => {
-    if (userLoading || adminLoading) return
-    setAdminLoading(true)
-    setTimeout(() => {
-      setAdminLoading(false)
-      signIn("admin")
-      // Navegar al tab Admin tras autenticación
-      setTimeout(() => {
-        navigation.navigate("MainApp", { screen: "Admin" })
-      }, 0)
-    }, 300)
   }
 
   return (
@@ -69,7 +55,7 @@ export default function LoginScreen() {
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
-                editable={!userLoading && !adminLoading}
+                editable={!userLoading}
               />
             </View>
           </View>
@@ -86,7 +72,7 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                editable={!userLoading && !adminLoading}
+                editable={!userLoading}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Ionicons
@@ -105,14 +91,27 @@ export default function LoginScreen() {
 
           {/* Login Button */}
           <TouchableOpacity
-            style={[styles.loginButton, (userLoading || adminLoading) && styles.loginButtonDisabled]}
+            style={[styles.loginButton, userLoading && styles.loginButtonDisabled]}
             onPress={handleLogin}
-            disabled={userLoading || adminLoading}
+            disabled={userLoading}
           >
             {userLoading ? (
               <ActivityIndicator color={COLORS.textInverse} />
             ) : (
               <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Botón admin justo debajo del primario */}
+          <TouchableOpacity
+            style={styles.adminButton}
+            onPress={() => navigation.navigate("Admin")}
+            accessibilityRole="button"
+          >
+            {userLoading ? (
+              <ActivityIndicator color={COLORS.textInverse} />
+            ) : (
+              <Text style={styles.adminButtonText}>Ingresar como admin</Text>
             )}
           </TouchableOpacity>
 
@@ -122,22 +121,7 @@ export default function LoginScreen() {
             <Text style={styles.dividerText}>¿Eres conductor?</Text>
             <View style={styles.divider} />
           </View>
-          <TouchableOpacity style={styles.altButton}>
-            <Text style={styles.altButtonText}>Inicia sesión acá</Text>
-          </TouchableOpacity>
-
-          {/* Acceso directo al panel Administrador (solo frontend/dev) */}
-          <TouchableOpacity
-            style={[styles.altButton, { marginTop: SPACING.md, borderColor: COLORS.success }]}
-            onPress={handleAdminAccess}
-            disabled={userLoading || adminLoading}
-          >
-            {adminLoading ? (
-              <ActivityIndicator color={COLORS.success} />
-            ) : (
-              <Text style={[styles.altButtonText, { color: COLORS.success, fontWeight: "700" }]}>Entrar como administrador</Text>
-            )}
-          </TouchableOpacity>
+          {/* Botón 'Inicia sesión acá' removido a solicitud */}
         </View>
 
         {/* Footer */}
@@ -237,6 +221,20 @@ const styles = StyleSheet.create({
   loginButtonText: {
     ...TEXT_STYLES.subtitle,
     color: COLORS.textInverse,
+  },
+  adminButton: {
+    backgroundColor: COLORS.success,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: SPACING.lg,
+    elevation: 2,
+  },
+  adminButtonText: {
+    ...TEXT_STYLES.body,
+    color: COLORS.textInverse,
+    fontWeight: "700",
   },
   dividerContainer: {
     flexDirection: "row",

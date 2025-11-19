@@ -10,7 +10,7 @@ import { scale, verticalScale, responsiveFont } from "../utils/responsive"
 
 import type { RootStackParamList, MainTabParamList } from "./types"
 import { COLORS, SPACING } from "../theme"
-import { AuthContext, UserRole } from "./AuthContext"
+import { AuthContext } from "./AuthContext"
 import { TicketsProvider } from "./TicketsContext"
 
 // Auth screens
@@ -21,11 +21,12 @@ import HomeScreen from "../screens/main/HomeScreen"
 import RoutesScreen from "../screens/main/RoutesMapScreen"
 import TicketsScreen from "../screens/main/TicketsScreen"
 import ProfileScreen from "../screens/main/ProfileScreen"
-import AdminPanel from "../screens/admin/AdminPanel"
+// AdminPanel eliminado
 
 // Detail screens
 import RouteDetailScreen from "../screens/details/RouteDetailScreen"
 import PaymentCheckoutScreen from "../screens/details/PaymentCheckoutScreen"
+import AdminPanel from "../screens/admin/AdminPanel"
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Tab = createBottomTabNavigator<MainTabParamList>()
@@ -41,7 +42,6 @@ function MainTabNavigator() {
         else if (route.name === "Routes") iconName = "navigate-outline"
         else if (route.name === "Tickets") iconName = "ticket-outline"
         else if (route.name === "Profile") iconName = "person-outline"
-        else if (route.name === "Admin") iconName = "shield-outline"
         return {
           headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name={iconName} size={scale(size)} color={color} />,
@@ -71,31 +71,24 @@ function MainTabNavigator() {
       <Tab.Screen name="Routes" component={RoutesScreen} options={{ title: "Rutas" }} />
       <Tab.Screen name="Tickets" component={TicketsScreen} options={{ title: "Mis Tickets" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil" }} />
-      {auth?.role === "admin" && (
-        <Tab.Screen name="Admin" component={AdminPanel} options={{ title: "Admin" }} />
-      )}
     </Tab.Navigator>
   )
 }
 
 export function RootNavigator() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false)
-  const [role, setRole] = React.useState<UserRole>("user")
 
   const authValue = React.useMemo(
     () => ({
       isAuthenticated,
-      role,
-      signIn: (r: UserRole = "user") => {
-        setRole(r)
+      signIn: () => {
         setIsAuthenticated(true)
       },
       signOut: () => {
         setIsAuthenticated(false)
-        setRole("user")
       },
     }),
-    [isAuthenticated, role]
+    [isAuthenticated]
   )
 
   return (
@@ -134,6 +127,7 @@ export function RootNavigator() {
             <Stack.Group screenOptions={{ animation: "none" }}>
               <Stack.Screen name="Auth" component={LoginScreen} />
               <Stack.Screen name="Register" component={require("../screens/auth/RegisterScreen").default} />
+              <Stack.Screen name="Admin" component={AdminPanel} />
             </Stack.Group>
           )}
           </Stack.Navigator>
