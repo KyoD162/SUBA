@@ -24,13 +24,7 @@ interface PreferenceOption {
 }
 
 const menuOptions: MenuOption[] = [
-  { id: "1", icon: "person-outline", label: "Editar Perfil" },
-  { id: "2", icon: "card-outline", label: "Métodos de Pago" },
-  { id: "3", icon: "location-outline", label: "Direcciones Guardadas", badge: "3" },
-  { id: "4", icon: "star-outline", label: "Rutas Favoritas" },
-  // Ionicons no tiene 'history-outline'; usa 'time-outline' para historial
-  { id: "5", icon: "time-outline", label: "Historial de Transacciones" },
-  { id: "6", icon: "notifications-outline", label: "Notificaciones" },
+  { id: "1", icon: "location-outline", label: "Direcciones Guardadas", badge: "3" }, 
 ]
 
 export default function ProfileScreen() {
