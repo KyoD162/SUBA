@@ -168,8 +168,8 @@ const PreciosScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <View style={[globalStyles.screenPadding, { flex: 1 }]}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={[globalStyles.screenPadding, { flex: 1, paddingBottom: SPACING.md }]}>
         <AdminHeader name="Admin" />
         
         <ScrollView 

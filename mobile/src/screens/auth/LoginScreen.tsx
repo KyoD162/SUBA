@@ -11,7 +11,7 @@ import type { RootStackParamList } from "../../navigation/types"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 
 export default function LoginScreen() {
-  const { signIn } = useAuth()
+  const { signInUser, signInDriver, signInAdmin } = useAuth()
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -25,7 +25,7 @@ export default function LoginScreen() {
     // Simulación de API
     setTimeout(() => {
       setUserLoading(false)
-      signIn()
+      signInUser()
     }, 1000)
   }
 
@@ -105,8 +105,16 @@ export default function LoginScreen() {
           {/* Botón admin justo debajo del primario */}
           <TouchableOpacity
             style={styles.adminButton}
-            onPress={() => navigation.navigate("Admin")}
+            onPress={() => {
+              if (userLoading) return
+              setUserLoading(true)
+              setTimeout(() => {
+                setUserLoading(false)
+                signInAdmin()
+              }, 800)
+            }}
             accessibilityRole="button"
+            disabled={userLoading}
           >
             {userLoading ? (
               <ActivityIndicator color={COLORS.textInverse} />
@@ -115,13 +123,29 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Alternative path */}
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
             <Text style={styles.dividerText}>¿Eres conductor?</Text>
             <View style={styles.divider} />
           </View>
-          {/* Botón 'Inicia sesión acá' removido a solicitud */}
+          <TouchableOpacity
+            style={styles.driverButton}
+            onPress={() => {
+              if (userLoading) return
+              setUserLoading(true)
+              setTimeout(() => {
+                setUserLoading(false)
+                signInDriver()
+              }, 800)
+            }}
+            disabled={userLoading}
+          >
+            {userLoading ? (
+              <ActivityIndicator color={COLORS.textInverse} />
+            ) : (
+              <Text style={styles.driverButtonText}>Ingresar como conductor</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
@@ -235,6 +259,21 @@ const styles = StyleSheet.create({
     ...TEXT_STYLES.body,
     color: COLORS.textInverse,
     fontWeight: "700",
+  },
+  driverButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xl,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  driverButtonText: {
+    ...TEXT_STYLES.body,
+    color: COLORS.textInverse,
+    fontWeight: '700',
   },
   dividerContainer: {
     flexDirection: "row",

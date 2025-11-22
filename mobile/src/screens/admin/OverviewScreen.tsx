@@ -12,8 +12,8 @@ import { RecentActivityTable } from "../../components/RecentActivityTable"
 
 const OverviewScreen: React.FC = () => {
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <ScrollView contentContainerStyle={globalStyles.screenPadding}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScrollView contentContainerStyle={[globalStyles.screenPadding, { paddingBottom: SPACING.md }]}>
         <AdminHeader name="Admin" />
         {/* Grid de estadísticas */}
         <View style={styles.statsGrid}>
