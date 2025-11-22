@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES, globalStyles } from "../../theme"
 import { Button, StatCard, Card, Badge, CurrencyDisplay } from "../../components"
+import React from "react"
 
 export default function HomeScreen() {
   const nearbyRoutes = [
