@@ -178,7 +178,7 @@ const PreciosScreen: React.FC = () => {
           style={{ flex: 1 }}
         >
           <View style={styles.content}>
-            <Text style={styles.title}>Gestión de Precios</Text>
+
             
             <Card style={styles.card}>
               <Text style={styles.cardTitle}>Precio del Ticket</Text>

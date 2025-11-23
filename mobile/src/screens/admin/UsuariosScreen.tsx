@@ -18,7 +18,7 @@ interface User {
   name: string
   email: string
   phone: string
-  type: "Estudiante" | "Adulto" | "Tercera Edad" | "Especial"
+  type: "Estudiante" | "Adulto" | "Tercera Edad" | "Discapacidad"
   status: "Activo" | "Inactivo"
   registeredAt: string
   balance: number
@@ -59,7 +59,42 @@ const MOCK_USERS: User[] = [
     balance: 2.50,
     trips: 12,
   },
+  {
+    id: "4",
+    name: "Maria Rodriguez",
+    email: "maria@email.com",
+    phone: "+58 424-4444444",
+    type: "Estudiante",
+    status: "Activo",
+    registeredAt: "10/3/2024",
+    balance: 8.00,
+    trips: 32,
+  },
+  {
+    id: "5",
+    name: "Luis Gonzalez",
+    email: "luis@email.com",
+    phone: "+58 412-5555555",
+    type: "Adulto",
+    status: "Inactivo",
+    registeredAt: "15/3/2024",
+    balance: 0.00,
+    trips: 5,
+  },
+  {
+    id: "6",
+    name: "Carmen Silva",
+    email: "carmen@email.com",
+    phone: "+58 416-6666666",
+    type: "Discapacidad",
+    status: "Activo",
+    registeredAt: "22/3/2024",
+    balance: 15.50,
+    trips: 60,
+  },
 ]
+
+const AVATAR_COLORS = ["#9DD98C", "#34A0A4", "#A9D6E5"]
 
 const UsuariosScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("")
@@ -71,9 +106,11 @@ const UsuariosScreen: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
   const [users, setUsers] = useState<User[]>(MOCK_USERS)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false)
 
-  const filterOptions = ["Todos los tipos", "Estudiantes", "Adultos", "Tercera Edad", "Especiales"]
-  const userTypes = ["Estudiante", "Adulto", "Tercera Edad", "Especial"]
+  const filterOptions = ["Todos los tipos", "Estudiantes", "Adultos", "Tercera Edad", "Discapacidad"]
+  const userTypes = ["Estudiante", "Adulto", "Tercera Edad", "Discapacidad"]
 
   const handleEditUser = (user: User) => {
     setEditingUser({ ...user })
@@ -89,6 +126,12 @@ const UsuariosScreen: React.FC = () => {
     setIsEditModalVisible(false)
     setEditingUser(null)
   }
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user)
+    setIsDetailModalVisible(true)
+  }
+
   const handleDeleteUser = (id: string) =>{
     setUsers(prev => prev.filter(user => user.id !== id));
   };
@@ -104,7 +147,7 @@ const UsuariosScreen: React.FC = () => {
       "Estudiantes": "Estudiante",
       "Adultos": "Adulto",
       "Tercera Edad": "Tercera Edad",
-      "Especiales": "Especial",
+      "Discapacidad": "Discapacidad",
     }
     
     return matchesSearch && user.type === typeMap[filterType]
@@ -119,78 +162,43 @@ const UsuariosScreen: React.FC = () => {
       .slice(0, 2)
   }
 
+  const getAvatarColor = (id: string) => {
+    let sum = 0;
+    for (let i = 0; i < id.length; i++) {
+      sum += id.charCodeAt(i);
+    }
+    return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+  }
+
   const renderUserCard = ({ item }: { item: User }) => (
-    <Card style={styles.userCard}>
-      <View style={styles.cardHeader}>
-        <View style={styles.userInfo}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
+    <TouchableOpacity onPress={() => handleViewUser(item)} activeOpacity={0.7}>
+      <Card style={styles.userCard}>
+        <View style={[styles.cardHeader, { marginBottom: 0 }]}>
+          <View style={styles.userInfo}>
+            <View style={[styles.avatar, { backgroundColor: getAvatarColor(item.id) }]}>
+              <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
+            </View>
+            <View>
+              <Text style={styles.userName}>{item.name}</Text>
+              <Badge 
+                label={item.type} 
+                variant="neutral" 
+                size="sm" 
+                style={styles.typeBadge}
+                textStyle={{ color: "#000000", fontSize: scale(10) }}
+              />
+            </View>
           </View>
-          <View>
-            <Text style={styles.userName}>{item.name}</Text>
-            <Badge 
-              label={item.type} 
-              variant="success" 
-              size="sm" 
-              style={styles.typeBadge}
-              textStyle={{ color: COLORS.success }}
-            />
-          </View>
+          <Badge 
+            label={item.status} 
+            variant={item.status === "Activo" ? "success" : "neutral"} 
+            size="sm"
+            style={{ backgroundColor: item.status === "Activo" ? "#C8E6C9" : "#F5F5F5" }}
+            textStyle={{ color: item.status === "Activo" ? "#2E7D32" : COLORS.textSecondary }}
+          />
         </View>
-        <Badge 
-          label={item.status} 
-          variant={item.status === "Activo" ? "success" : "neutral"} 
-          size="sm"
-          style={{ backgroundColor: item.status === "Activo" ? "#E8F5E9" : "#F5F5F5" }}
-          textStyle={{ color: item.status === "Activo" ? COLORS.success : COLORS.textSecondary }}
-        />
-      </View>
-
-      <View style={styles.contactInfo}>
-        <View style={styles.infoRow}>
-          <Ionicons name="mail-outline" size={scale(16)} color={COLORS.textSecondary} />
-          <Text style={styles.infoText}>{item.email}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Ionicons name="call-outline" size={scale(16)} color={COLORS.textSecondary} />
-          <Text style={styles.infoText}>{item.phone}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Ionicons name="calendar-outline" size={scale(16)} color={COLORS.textSecondary} />
-          <Text style={styles.infoText}>Registrado: {item.registeredAt}</Text>
-        </View>
-      </View>
-
-      <View style={styles.statsContainer}>
-        <View>
-          <Text style={styles.statsLabel}>Saldo</Text>
-          <CurrencyDisplay usdAmount={item.balance} size="md" />
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.statsLabel}>Viajes</Text>
-          <Text style={styles.statsValue}>{item.trips}</Text>
-        </View>
-      </View>
-
-      <View style={styles.actionsContainer}>
-        <Button
-          title="Editar"
-          variant="outline"
-          size="sm"
-          icon={<Ionicons name="create-outline" size={scale(16)} color={COLORS.primary} style={{ marginRight: scale(4) }} />}
-          style={styles.editButton}
-          textStyle={{ color: COLORS.primary }}
-          onPress={() => handleEditUser(item)}
-        />
-        <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDeleteUser(item.id)}
-                  activeOpacity={0.7}
-                >
-                <Ionicons name="trash-outline" size={scale(16)} color={COLORS.danger} />
-                </TouchableOpacity>
-      </View>
-    </Card>
+      </Card>
+    </TouchableOpacity>
   )
 
   return (
@@ -254,7 +262,119 @@ const UsuariosScreen: React.FC = () => {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          style={{ flex: 1 }}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', marginTop: SPACING.xl }}>
+              <Text style={{ ...TEXT_STYLES.body, color: COLORS.textSecondary }}>No se encontraron usuarios</Text>
+            </View>
+          }
         />
+
+        <Modal
+          visible={isDetailModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsDetailModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Detalles del Usuario</Text>
+                <TouchableOpacity onPress={() => setIsDetailModalVisible(false)}>
+                  <Ionicons name="close" size={scale(24)} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {selectedUser && (
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <View style={{ alignItems: 'center', marginBottom: SPACING.lg }}>
+                    <View style={[styles.avatar, { width: scale(80), height: scale(80), borderRadius: scale(40), marginBottom: SPACING.sm, backgroundColor: getAvatarColor(selectedUser.id) }]}>
+                      <Text style={[styles.avatarText, { fontSize: scale(32) }]}>{getInitials(selectedUser.name)}</Text>
+                    </View>
+                    <Text style={styles.userName}>{selectedUser.name}</Text>
+                    <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                        <Badge 
+                        label={selectedUser.type} 
+                        variant="neutral" 
+                        size="sm" 
+                        style={styles.typeBadge}
+                        textStyle={{ color: "#000000", fontSize: scale(10) }}
+                        />
+                        <Badge 
+                        label={selectedUser.status} 
+                        variant={selectedUser.status === "Activo" ? "success" : "neutral"} 
+                        size="sm"
+                        style={{ 
+                          backgroundColor: selectedUser.status === "Activo" ? "#C8E6C9" : "#F5F5F5",
+                          paddingVertical: scale(1),
+                          paddingHorizontal: scale(6),
+                          borderRadius: scale(6),
+                          borderWidth: 1,
+                          borderColor: selectedUser.status === "Activo" ? "#C8E6C9" : "#F5F5F5"
+                        }}
+                        textStyle={{ 
+                          color: selectedUser.status === "Activo" ? "#2E7D32" : COLORS.textSecondary,
+                          fontSize: scale(10)
+                        }}
+                        />
+                    </View>
+                  </View>
+
+                  <View style={styles.contactInfo}>
+                    <View style={styles.infoRow}>
+                      <Ionicons name="mail-outline" size={scale(20)} color={COLORS.textSecondary} />
+                      <Text style={[styles.infoText, { fontSize: scale(14) }]}>{selectedUser.email}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Ionicons name="call-outline" size={scale(20)} color={COLORS.textSecondary} />
+                      <Text style={[styles.infoText, { fontSize: scale(14) }]}>{selectedUser.phone}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Ionicons name="calendar-outline" size={scale(20)} color={COLORS.textSecondary} />
+                      <Text style={[styles.infoText, { fontSize: scale(14) }]}>Registrado: {selectedUser.registeredAt}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.statsContainer}>
+                    <View>
+                      <Text style={styles.statsLabel}>Saldo</Text>
+                      <CurrencyDisplay usdAmount={selectedUser.balance} size="md" />
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={styles.statsLabel}>Viajes</Text>
+                      <Text style={styles.statsValue}>{selectedUser.trips}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.actionsContainer}>
+                    <Button
+                      title="Editar"
+                      variant="outline"
+                      size="sm"
+                      icon={<Ionicons name="create-outline" size={scale(16)} color={COLORS.primary} style={{ marginRight: scale(4) }} />}
+                      style={styles.editButton}
+                      textStyle={{ color: COLORS.primary }}
+                      onPress={() => {
+                        setIsDetailModalVisible(false)
+                        handleEditUser(selectedUser)
+                      }}
+                    />
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => {
+                          setIsDetailModalVisible(false)
+                          handleDeleteUser(selectedUser.id)
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="trash-outline" size={scale(16)} color={COLORS.danger} />
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
+              )}
+            </View>
+          </View>
+        </Modal>
 
         <Modal
           visible={isEditModalVisible}
@@ -304,7 +424,7 @@ const UsuariosScreen: React.FC = () => {
                   />
                 </View>
 
-                <View style={[styles.formGroup, { zIndex: 10 }]}>
+                <View style={styles.formGroup}>
                   <Text style={styles.label}>Tipo de Usuario</Text>
                   <TouchableOpacity
                     style={styles.dropdownButton}
@@ -470,10 +590,13 @@ const styles = StyleSheet.create({
     marginBottom: scale(4),
   },
   typeBadge: {
-    backgroundColor: '#E8F5E9', // Very light green
+    backgroundColor: '#FFFFFF', // White
     alignSelf: 'flex-start',
-    paddingVertical: scale(2),
-    paddingHorizontal: scale(8),
+    paddingVertical: scale(1),
+    paddingHorizontal: scale(6),
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: scale(6),
   },
   contactInfo: {
     gap: scale(8),
@@ -570,20 +693,11 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   typeDropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
     marginTop: SPACING.xs,
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
   },
   typeOption: {
     padding: SPACING.md,

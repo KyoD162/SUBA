@@ -10,8 +10,8 @@ export const formatPuertoOrdazPrice = (usdAmount: number): string => {
   return `$${usdAmount.toFixed(2)} USD (≈ BS ${bsAmount.toLocaleString("es-VE")})`
 }
 
-export const formatUSD = (amount: number): string => {
-  return `$${amount.toFixed(2)} USD`
+export const formatUSD = (amount: number, showSuffix = true): string => {
+  return `$${amount.toFixed(2)}${showSuffix ? " USD" : ""}`
 }
 
 export const formatBS = (amount: number): string => {

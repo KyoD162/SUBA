@@ -11,9 +11,10 @@ interface CurrencyDisplayProps {
   showToggle?: boolean
   size?: "sm" | "md" | "lg"
   compact?: boolean
+  hideSuffix?: boolean
 }
 
-export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ usdAmount, showToggle = false, size = "md", compact = false }) => {
+export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ usdAmount, showToggle = false, size = "md", compact = false, hideSuffix = false }) => {
   const [showBS, setShowBS] = React.useState(false)
   const bsAmount = convertUSDtoBS(usdAmount)
 
@@ -29,17 +30,17 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ usdAmount, sho
     <View style={styles.container}>
       {showToggle ? (
         <TouchableOpacity style={styles.toggleContainer} onPress={() => setShowBS(!showBS)}>
-          <Text style={[textStyle, styles.mainAmount]}>{showBS ? formatBS(bsAmount) : formatUSD(usdAmount)}</Text>
+          <Text style={[textStyle, styles.mainAmount]}>{showBS ? formatBS(bsAmount) : formatUSD(usdAmount, !hideSuffix)}</Text>
           <Ionicons name="swap-horizontal" size={16} color={COLORS.primary} />
         </TouchableOpacity>
       ) : compact ? (
         <View style={styles.inlineContainer}>
-          <Text style={[textStyle, styles.mainAmount]}>{formatUSD(usdAmount)}</Text>
+          <Text style={[textStyle, styles.mainAmount]}>{formatUSD(usdAmount, !hideSuffix)}</Text>
           <Text style={[TEXT_STYLES.caption, styles.secondaryInline]}>≈ {formatBS(bsAmount)}</Text>
         </View>
       ) : (
         <View>
-          <Text style={[textStyle, styles.mainAmount]}>{formatUSD(usdAmount)}</Text>
+          <Text style={[textStyle, styles.mainAmount]}>{formatUSD(usdAmount, !hideSuffix)}</Text>
           <Text style={[TEXT_STYLES.caption, styles.secondaryAmount]}>≈ {formatBS(bsAmount)}</Text>
         </View>
       )}
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
   },
   secondaryAmount: {
     color: COLORS.textTertiary,
-    marginTop: SPACING.xs,
+    marginTop: 0,
   },
   inlineContainer: {
     flexDirection: "row",

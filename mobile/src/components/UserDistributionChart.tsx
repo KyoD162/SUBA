@@ -24,7 +24,7 @@ type SelectedSlice = Slice & {
 const defaultData: Slice[] = [
   { label: "Estudiantes", value: 45, color: COLORS.success },
   { label: "Adultos", value: 35, color: COLORS.primary },
-  { label: "Especial", value: 10, color: COLORS.primaryDark },
+  { label: "Discapacidad", value: 10, color: COLORS.primaryDark },
   { label: "Tercera Edad", value: 10, color: "#A9D6E5" },
 ]
 

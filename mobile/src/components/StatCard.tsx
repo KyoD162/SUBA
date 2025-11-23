@@ -29,7 +29,7 @@ export const StatCard: React.FC<StatCardProps> = ({
     <View style={[styles.container, style]}>
       <View style={styles.topRow}>
         <Text style={styles.label}>{label}</Text>
-        <View style={[styles.iconContainer, { backgroundColor: color + "15" }]}>
+        <View style={[styles.iconContainer, { backgroundColor: color + "25" }]}>
           <Ionicons name={icon} size={scale(20)} color={color} />
         </View>
       </View>
@@ -98,7 +98,8 @@ const styles = StyleSheet.create({
   trendContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
+    marginTop: SPACING.xs,
   },
   trendText: {
     ...TEXT_STYLES.caption,
