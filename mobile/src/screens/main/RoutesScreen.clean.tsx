@@ -18,6 +18,10 @@ interface Route {
   color: string
   priceUSD: number
   neighborhood: string
+  startStop: string
+  endStop: string
+  plate?: string
+  approxArrival?: string
 }
 
 const mockRoutes: Route[] = [
@@ -34,6 +38,10 @@ const mockRoutes: Route[] = [
     color: COLORS.primary,
     priceUSD: 0.5,
     neighborhood: "Unare",
+    startStop: "Unare Centro",
+    endStop: "La Ceiba",
+    plate: "A56YJ80",
+    approxArrival: "5 min aprox.",
   },
   {
     id: "B5",
@@ -48,6 +56,10 @@ const mockRoutes: Route[] = [
     color: COLORS.success,
     priceUSD: 0.75,
     neighborhood: "Alta Vista",
+    startStop: "Casa de la Cultura",
+    endStop: "Chacao",
+    plate: "B12TR34",
+    approxArrival: "2 min aprox.",
   },
   {
     id: "C3",
@@ -62,6 +74,10 @@ const mockRoutes: Route[] = [
     color: COLORS.primaryDark,
     priceUSD: 0.6,
     neighborhood: "San Félix",
+    startStop: "Sabana Grande",
+    endStop: "Chacaito",
+    plate: "C33LM90",
+    approxArrival: "8 min aprox.",
   },
   {
     id: "D2",
@@ -76,6 +92,10 @@ const mockRoutes: Route[] = [
     color: "#A9D6E5",
     priceUSD: 0.55,
     neighborhood: "Villa Asia",
+    startStop: "Villa Asia",
+    endStop: "Centro",
+    plate: "D22XZ11",
+    approxArrival: "12 min aprox.",
   },
 ]
 
@@ -123,6 +143,29 @@ export default function RoutesScreen() {
           size="sm"
         />
       </View>
+
+      {/* Nuevo: fila con parada inicio/llegada, icono de bus, placa y tiempo aproximado */}
+    <View style={styles.tripRow}>
+      <View style={styles.stopsColumn}>
+        <View style={styles.stopRow}>
+          <Ionicons name="ellipse" size={10} color={COLORS.textTertiary} />
+          <Text style={styles.stopText}>{route.startStop}</Text>
+        </View>
+        <View style={styles.dottedLine} />
+        <View style={styles.stopRow}>
+          <Ionicons name="location" size={10} color={COLORS.textTertiary} />
+          <Text style={styles.stopText}>{route.endStop}</Text>
+        </View>
+      </View>
+
+      <View style={styles.busInfo}>
+        <View style={styles.busRow}>
+          <Ionicons name="bus-outline" size={20} color={route.color} />
+          <Text style={styles.plateText}>{route.plate ?? "-"}</Text>
+        </View>
+        <Text style={styles.approxText}>{route.approxArrival ?? route.nextArrival}</Text>
+      </View>
+    </View>
 
       <View style={styles.routeDetails}>
         <View style={styles.detailItem}>
@@ -431,5 +474,54 @@ const styles = StyleSheet.create({
     ...TEXT_STYLES.caption,
     color: COLORS.textSecondary,
     marginTop: SPACING.xs,
+  },
+  tripRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  stopsColumn: {
+    flexDirection: "column",
+    flex: 1,
+    paddingRight: SPACING.lg,
+  },
+  stopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+  },
+  stopText: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.text,
+  },
+  dottedLine: {
+    width: 1,
+    height: 18,
+    borderLeftWidth: 1,
+    borderStyle: "dotted",
+    borderColor: COLORS.textTertiary,
+    marginVertical: SPACING.xs,
+    marginLeft: 4,
+  },
+  busInfo: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  busRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  plateText: {
+    ...TEXT_STYLES.bodySm,
+    color: COLORS.text,
+    fontWeight: "700",
+  },
+  approxText: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.textTertiary,
   },
 })
