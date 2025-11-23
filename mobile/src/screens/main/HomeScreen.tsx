@@ -77,6 +77,20 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Promotional Banner */}
+        <Card variant="elevated" style={styles.promotionCard}>
+          <View style={styles.promotionContent}>
+            <View>
+              <Ionicons name="gift-outline" size={32} color={COLORS.success} />
+            </View>
+            <View style={styles.promotionText}>
+              <Text style={styles.promoTitle}>¡Recarga y ahorra!</Text>
+              <Text style={styles.promoSubtitle}>10% de descuento en paquetes mensuales</Text>
+            </View>
+            <Button title="Ver más" variant="secondary" size="sm" />
+          </View>
+        </Card>
+
         {/* Active Pass Card */}
         <Card style={styles.passCard}>
           <View style={styles.passHeader}>
@@ -148,19 +162,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Promotional Banner */}
-        <Card variant="elevated" style={styles.promotionCard}>
-          <View style={styles.promotionContent}>
-            <View>
-              <Ionicons name="gift-outline" size={32} color={COLORS.success} />
-            </View>
-            <View style={styles.promotionText}>
-              <Text style={styles.promoTitle}>¡Recarga y ahorra!</Text>
-              <Text style={styles.promoSubtitle}>10% de descuento en paquetes mensuales</Text>
-            </View>
-            <Button title="Ver más" variant="secondary" size="sm" />
-          </View>
-        </Card>
       </ScrollView>
     </SafeAreaView>
   )
