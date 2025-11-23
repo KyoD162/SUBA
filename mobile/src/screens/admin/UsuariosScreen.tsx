@@ -70,6 +70,7 @@ const UsuariosScreen: React.FC = () => {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
+  const [users, setUsers] = useState<User[]>(MOCK_USERS)
 
   const filterOptions = ["Todos los tipos", "Estudiantes", "Adultos", "Tercera Edad", "Especiales"]
   const userTypes = ["Estudiante", "Adulto", "Tercera Edad", "Especial"]
@@ -80,13 +81,19 @@ const UsuariosScreen: React.FC = () => {
   }
 
   const handleSaveUser = () => {
-    // Here you would typically update the user in your backend or state
-    console.log("Saving user:", editingUser)
+    if (!editingUser) return;
+
+    setUsers(prev =>
+      prev.map(u => u.id === editingUser.id ? editingUser : u)
+    );
     setIsEditModalVisible(false)
     setEditingUser(null)
   }
+  const handleDeleteUser = (id: string) =>{
+    setUsers(prev => prev.filter(user => user.id !== id));
+  };
 
-  const filteredUsers = MOCK_USERS.filter((user) => {
+  const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -99,7 +106,7 @@ const UsuariosScreen: React.FC = () => {
       "Tercera Edad": "Tercera Edad",
       "Especiales": "Especial",
     }
-
+    
     return matchesSearch && user.type === typeMap[filterType]
   })
 
@@ -175,9 +182,13 @@ const UsuariosScreen: React.FC = () => {
           textStyle={{ color: COLORS.primary }}
           onPress={() => handleEditUser(item)}
         />
-        <TouchableOpacity style={styles.deleteButton}>
-          <Ionicons name="trash-outline" size={scale(20)} color={COLORS.danger} />
-        </TouchableOpacity>
+        <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteUser(item.id)}
+                  activeOpacity={0.7}
+                >
+                <Ionicons name="trash-outline" size={scale(16)} color={COLORS.danger} />
+                </TouchableOpacity>
       </View>
     </Card>
   )
@@ -202,13 +213,13 @@ const UsuariosScreen: React.FC = () => {
               onPress={() => setShowFilter(!showFilter)}
               activeOpacity={0.7}
             >
-              <Text style={styles.filterButtonText}>{filterType}</Text>
-              <Ionicons 
-                name={showFilter ? "chevron-up" : "chevron-down"} 
-                size={scale(20)} 
-                color={COLORS.textTertiary} 
-              />
-            </TouchableOpacity>
+                <Text style={styles.filterButtonText}>{filterType}</Text>
+                <Ionicons 
+                  name={showFilter ? "chevron-up" : "chevron-down"} 
+                  size={scale(20)} 
+                  color={COLORS.textTertiary} 
+                />
+              </TouchableOpacity>
 
             {showFilter && (
               <View style={styles.dropdown}>

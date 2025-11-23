@@ -59,12 +59,24 @@ const MOCK_USERS: User[] = [
     vehicle: "Taxi colectivo",
   },
 ]
+const emptyUser: User = {
+  id: "",
+  name: "",
+  email: "",
+  phone: "",
+  status: "Activo",
+  registeredAt: new Date().toLocaleDateString(),
+  salary: 0,
+  trips: 0,
+  vehicle: "Bus",
+}
 
 const ConductoresScreen: React.FC = () => {
 const [searchQuery, setSearchQuery] = useState("")
   const [filterType, setFilterType] = useState("Todos los tipos")
   const [showFilter, setShowFilter] = useState(false)
   const [modalMode, setModalMode] = useState<"add" | "edit">("add")
+  const [users, setUsers] = useState<User[]>(MOCK_USERS)
 
   
   // Edit Modal State
@@ -72,8 +84,8 @@ const [searchQuery, setSearchQuery] = useState("")
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
 
-  const filterOptions = ["Todos los tipos", "Estudiantes", "Adultos", "Tercera Edad", "Especiales"]
-  const userTypes = ["Bus", "Micorbus", "Taxi colectivo"]
+  const filterOptions = ["Todos los tipos", "Bus", "Microbus", "Taxi colectivo"]
+  const userTypes = ["Bus", "Microbus", "Taxi colectivo"]
 
   const handleEditUser = (user: User) => {
     setEditingUser({ ...user })
@@ -82,15 +94,26 @@ const [searchQuery, setSearchQuery] = useState("")
   }
 
   const handleSaveUser = () => {
-    // Here you would typically update the user in your backend or state
-    console.log("Saving user:", editingUser)
+    if (!editingUser) return;
+
+    if(modalMode === "edit"){
+      setUsers(prev =>
+      prev.map(u => u.id === editingUser.id ? editingUser : u)
+    );
+
+    }else{
+      console.log("Adding user:", editingUser)
+      setUsers(prev => [...prev, { ...editingUser, id: Date.now().toString() }]);
+    }
+
     setIsEditModalVisible(false)
     setEditingUser(null)
   }
 
   const handleAddUser = () => {
-    setIsEditModalVisible(true)
+    setEditingUser(emptyUser)
     setModalMode("add")
+    setIsEditModalVisible(true)
   }
 
   const getInitials = (name: string) => {
@@ -101,7 +124,19 @@ const [searchQuery, setSearchQuery] = useState("")
       .toUpperCase()
       .slice(0, 2)
   }
+  const handleDeleteUser = (id: string) =>{
+    setUsers(prev => prev.filter(user => user.id !== id));
+  };
 
+  const filteredUsers = users.filter((user) => {
+  const matchesSearch =
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+
+    if (filterType === "Todos los tipos") return matchesSearch
+
+    return matchesSearch && user.vehicle.toLocaleLowerCase() === filterType.toLocaleLowerCase()
+  })
   const renderUserCard = ({ item }: { item: User }) => (
     <Card style={styles.userCard}>
       <View style={styles.cardHeader}>
@@ -146,7 +181,7 @@ const [searchQuery, setSearchQuery] = useState("")
 
       <View style={styles.statsContainer}>
         <View>
-          <Text style={styles.statsLabel}>Saldo</Text>
+          <Text style={styles.statsLabel}>Salario</Text>
           <CurrencyDisplay usdAmount={item.salary} size="md" />
         </View>
         <View style={{ alignItems: 'flex-end' }}>
@@ -165,8 +200,12 @@ const [searchQuery, setSearchQuery] = useState("")
           textStyle={{ color: COLORS.primary }}
           onPress={() => handleEditUser(item)}
         />
-        <TouchableOpacity style={styles.deleteButton}>
-          <Ionicons name="trash-outline" size={scale(20)} color={COLORS.danger} />
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteUser(item.id)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="trash-outline" size={scale(16)} color={COLORS.danger} />
         </TouchableOpacity>
       </View>
     </Card>
@@ -246,7 +285,7 @@ const [searchQuery, setSearchQuery] = useState("")
         </View>
 
         <FlatList
-        data={MOCK_USERS}
+          data={filteredUsers}
           renderItem={renderUserCard}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
@@ -318,7 +357,7 @@ const [searchQuery, setSearchQuery] = useState("")
                           key={type}
                           style={styles.typeOption}
                           onPress={() => {
-                            setEditingUser(prev => prev ? { ...prev, type: type as any } : null)
+                            setEditingUser(prev => prev ? { ...prev, vehicle: type as any } : null)
                             setShowTypeDropdown(false)
                           }}
                         >
@@ -333,7 +372,7 @@ const [searchQuery, setSearchQuery] = useState("")
                   <Input
                     label="Sueldo"
                     value={editingUser?.salary.toString()}
-                    onChangeText={(text) => setEditingUser(prev => prev ? { ...prev, balance: parseFloat(text) || 0 } : null)}
+                    onChangeText={(text) => setEditingUser(prev => prev ? { ...prev, salary: parseFloat(text) || 0 } : null)}
                     placeholder="0.00"
                     keyboardType="numeric"
                   />
@@ -505,6 +544,7 @@ const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: 'row',
     gap: SPACING.md,
+    height: scale(48),
   },
   editButton: {
     flex: 1,

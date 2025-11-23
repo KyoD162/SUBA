@@ -11,8 +11,18 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node", "jest"],
-    "typeRoots": ["../node_modules/@types", "./node_modules/@types", "./src/types"]
+    "types": [
+      "node",
+      "jest"
+    ],
+    "typeRoots": [
+      "../node_modules/@types",
+      "./node_modules/@types",
+      "./src/types"
+    ]
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ],
+  "extends": "expo/tsconfig.base"
 }
