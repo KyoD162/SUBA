@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES, globalStyles } from "../../theme"
 import { Button, StatCard, Card, Badge, CurrencyDisplay } from "../../components"
+import React from "react"
 
 export default function HomeScreen() {
   const nearbyRoutes = [
@@ -48,32 +49,32 @@ export default function HomeScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActionsContainer}>
-          <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.actionIcon, { backgroundColor: COLORS.success }]}>
-              <Ionicons name="ticket-outline" size={24} color={COLORS.textInverse} />
+          <TouchableOpacity 
+            style={styles.cardButton} 
+            activeOpacity={0.7}
+            onPress={() => console.log("Ir a Comprar")} // Agrega tu navegación aquí
+          >
+            <View style={[styles.cardIconContainer, { backgroundColor: COLORS.primary + '20' }]}>
+              <Ionicons name="card-outline" size={28} color={COLORS.primary} />
             </View>
-            <Text style={styles.actionLabel}>Mi Pase</Text>
+            <View style={styles.cardTextContainer}>
+              <Text style={styles.cardTitle}>Comprar</Text>
+              <Text style={styles.cardSubtitle}>Recargar saldo</Text>
+            </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.actionIcon, { backgroundColor: COLORS.primary }]}>
-              <Ionicons name="card-outline" size={24} color={COLORS.textInverse} />
+          <TouchableOpacity 
+            style={styles.cardButton} 
+            activeOpacity={0.7}
+            onPress={() => console.log("Ir a Historial")} // Agrega tu navegación aquí
+          >
+            <View style={[styles.cardIconContainer, { backgroundColor: COLORS.primaryDark + '20' }]}>
+              <Ionicons name="stats-chart-outline" size={28} color={COLORS.primaryDark} />
             </View>
-            <Text style={styles.actionLabel}>Comprar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.actionIcon, { backgroundColor: "#A9D6E5" }]}>
-              <Ionicons name="map-outline" size={24} color={COLORS.text} />
+             <View style={styles.cardTextContainer}>
+              <Text style={styles.cardTitle}>Historial</Text>
+              <Text style={styles.cardSubtitle}>Ver movimientos</Text>
             </View>
-            <Text style={styles.actionLabel}>Rutas</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.actionIcon, { backgroundColor: COLORS.primaryDark }]}>
-              <Ionicons name="stats-chart-outline" size={24} color={COLORS.textInverse} />
-            </View>
-            <Text style={styles.actionLabel}>Historial</Text>
           </TouchableOpacity>
         </View>
 
@@ -215,24 +216,50 @@ const styles = StyleSheet.create({
   },
   quickActionsContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: SPACING["2xl"],
-    paddingHorizontal: SPACING.sm,
+    gap: 12,
+    marginBottom: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
-  quickAction: {
-    alignItems: "center",
-    gap: SPACING.md,
-  },
-  actionIcon: {
-    width: 56,
-    height: 56,
+  cardButton: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
-    ...globalStyles.centered,
+    paddingVertical: 12, 
+    paddingHorizontal: 10, 
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,       
+    // Sombras
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  cardIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cardTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  cardTitle: {
+    ...TEXT_STYLES.bodySm,
+    color: COLORS.text,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  cardSubtitle: {
+    ...TEXT_STYLES.caption,
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: -2,
   },
   actionLabel: {
     ...TEXT_STYLES.caption,

@@ -10,7 +10,7 @@ import { useNavigation } from "@react-navigation/native"
 
 export default function RegisterScreen() {
   const navigation = useNavigation()
-  const { signIn } = useAuth()
+  const { signInUser } = useAuth()
   const insets = useSafeAreaInsets()
 
   const [step, setStep] = useState(1)
@@ -61,7 +61,7 @@ export default function RegisterScreen() {
     setTimeout(() => {
       setLoading(false)
       // Simulate account creation success → sign in and go to app
-      signIn()
+      signInUser()
     }, 1200)
   }
 

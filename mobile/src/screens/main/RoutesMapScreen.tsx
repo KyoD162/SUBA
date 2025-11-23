@@ -23,6 +23,8 @@ interface RouteInfo {
   color: string
   stops: { id: string; lat: number; lng: number; name: string }[]
   busPositions: { id: string; lat: number; lng: number }[]
+  plate?: string
+  approxArrival?: string
 }
 
 // Local lightweight types to avoid importing expo-maps in Expo Go
@@ -58,6 +60,8 @@ const MOCK_ROUTES: RouteInfo[] = [
       { id: "b1", lat: 8.2882, lng: -62.7436 },
       { id: "b2", lat: 8.286, lng: -62.7475 },
     ],
+    plate: "A56YJ80",
+    approxArrival: "5 min aprox.",
   },
   {
     id: "B5",
@@ -72,6 +76,8 @@ const MOCK_ROUTES: RouteInfo[] = [
       { id: "sb2", lat: 8.299, lng: -62.739, name: "Centro Sur" },
     ],
     busPositions: [{ id: "bb1", lat: 8.2968, lng: -62.741 }],
+    plate: "B12TR34",
+    approxArrival: "2 min aprox.",
   },
 ]
 
@@ -132,6 +138,8 @@ const MOCK_ROUTES: RouteInfo[] = [
       color,
       stops,
       busPositions,
+      plate: `${id}00`,
+      approxArrival: `${3 + (i % 6)} min aprox.`,
     })
   }
 }
@@ -380,12 +388,6 @@ export default function RoutesMapScreen() {
                 </View>
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName}>{r.name}</Text>
-                  <View style={styles.itemMeta}>
-                    <Ionicons name="time-outline" size={14} color={COLORS.textTertiary} />
-                    <Text style={styles.metaText}>{r.frequency}</Text>
-                    <View style={styles.metaDot} />
-                    <CurrencyDisplay usdAmount={r.priceUSD} size="sm" />
-                  </View>
                 </View>
                 <Badge
                   label={STATUS[r.status].label}
@@ -400,10 +402,40 @@ export default function RoutesMapScreen() {
               </TouchableOpacity>
               {expandedRoute === r.id && (
                 <View style={styles.expanded}>
+                  {/* fila resumen: parada inicio / linea punteada / parada final + info bus */}
+                  <View style={styles.tripRow}>
+                    <View style={styles.stopsColumn}>
+                      <View style={styles.stopRowHeader}>
+                        <Ionicons name="ellipse" size={10} color={COLORS.textTertiary} />
+                        <Text style={styles.stopTextHeader}>{r.stops[0]?.name}</Text>
+                      </View>
+                      <View style={styles.dottedLineVertical} />
+                      <View style={styles.stopRowHeader}>
+                        <Ionicons name="location" size={10} color={COLORS.textTertiary} />
+                        <Text style={styles.stopTextHeader}>{r.stops[r.stops.length - 1]?.name}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.busInfo}>
+                      <View style={styles.busRow}>
+                        <Ionicons name="bus-outline" size={20} color={r.color} />
+                        <Text style={styles.plateText}>{r.plate ?? "-"}</Text>
+                      </View>
+                      <Text style={styles.approxText}>{r.approxArrival ?? "—"}</Text>
+                    </View>
+                  </View>
                   <Text style={styles.expandedTitle}>Paradas ({r.stops.length})</Text>
-                  {r.stops.map((s) => (
-                    <View key={s.id} style={styles.stopRow}>
-                      <Ionicons name="pin" size={14} color={r.color} />
+                  {r.stops.map((s, idx) => (
+                    <View key={s.id} style={styles.stopItem}>
+                      <View style={styles.stopMarkerColumn}>
+                        <View
+                          style={[
+                            styles.markerCircle,
+                            idx === 0 && styles.markerStart,
+                            idx === r.stops.length - 1 && styles.markerEnd,
+                          ]}
+                        />
+                        {idx < r.stops.length - 1 && <View style={styles.dottedLineBetween} />}
+                      </View>
                       <Text style={styles.stopName}>{s.name}</Text>
                     </View>
                   ))}
@@ -412,6 +444,7 @@ export default function RoutesMapScreen() {
             </Card>
           )}
         />
+       
   </Animated.View>
     </SafeAreaView>
   )
@@ -498,4 +531,71 @@ const styles = StyleSheet.create({
   expandedTitle: { ...TEXT_STYLES.caption, color: COLORS.textSecondary, fontWeight: "600", marginTop: -SPACING.xs },
   stopRow: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
   stopName: { ...TEXT_STYLES.caption, color: COLORS.text },
+  /* NEW: trip / stops / bus info styles */
+  tripRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  stopsColumn: {
+    flexDirection: "column",
+    flex: 1,
+    paddingRight: SPACING.lg,
+  },
+  stopRowHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+  },
+  stopTextHeader: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.text,
+    fontWeight: "600",
+  },
+  dottedLineVertical: {
+    width: 1,
+    height: 22,
+    borderLeftWidth: 1,
+    borderStyle: "dotted",
+    borderColor: COLORS.textTertiary,
+    marginVertical: SPACING.xs,
+    marginLeft: 4,
+  },
+  busInfo: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  busRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  plateText: {
+    ...TEXT_STYLES.bodySm,
+    color: COLORS.text,
+    fontWeight: "700",
+  },
+  approxText: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.textTertiary,
+  },
+  /* Stop list with vertical markers */
+  stopItem: { flexDirection: "row", alignItems: "center", gap: SPACING.md, paddingVertical: SPACING.xs },
+  stopMarkerColumn: { width: 28, alignItems: "center", paddingTop: 2 },
+  markerCircle: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.border },
+  markerStart: { backgroundColor: COLORS.textTertiary },
+  markerEnd: { backgroundColor: COLORS.primary },
+  dottedLineBetween: {
+    width: 1,
+    flex: 1,
+    backgroundColor: "transparent",
+    borderLeftWidth: 1,
+    borderStyle: "dotted",
+    borderColor: COLORS.textTertiary,
+    marginTop: 4,
+    flexBasis: 18,
+  },
 })

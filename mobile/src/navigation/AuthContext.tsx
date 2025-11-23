@@ -2,7 +2,10 @@ import React, { createContext, useContext } from "react"
 
 type AuthContextValue = {
   isAuthenticated: boolean
-  signIn: () => void
+  role: 'user' | 'driver' | 'admin' | null
+  signInUser: () => void
+  signInDriver: () => void
+  signInAdmin: () => void
   signOut: () => void
 }
 

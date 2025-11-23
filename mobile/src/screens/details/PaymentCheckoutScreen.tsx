@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, TextInput, Dimensions, useWindowDimensions } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from "../../theme"
 import { Card, Button, Badge, CurrencyDisplay } from "../../components"
@@ -107,6 +107,7 @@ export default function PaymentCheckoutScreen() {
   const [promoCode, setPromoCode] = useState("")
   const [customTrips, setCustomTrips] = useState<number>(5)
   const { width: screenWidth } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
   // Slightly smaller than screen width to avoid edge clipping and feel like a carousel
   const cardWidth = Math.max(280, screenWidth - SPACING.lg * 2 - SPACING.md)
   // Symmetric side padding so selected card appears centered without clipping
@@ -280,7 +281,13 @@ export default function PaymentCheckoutScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom + SPACING.xl, SPACING.xl * 2) }
+        ]} 
+        showsVerticalScrollIndicator={false}
+      >
         {/* Package Selection - Horizontal Carousel */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Selecciona tu paquete</Text>

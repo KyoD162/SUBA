@@ -1,58 +1,75 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, FlatList } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Ionicons } from "@expo/vector-icons"
-import { COLORS, SPACING, RADIUS, TEXT_STYLES } from "../../theme"
-import { Card, Badge, Button } from "../../components"
+import { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  FlatList,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import { COLORS, SPACING, RADIUS, TEXT_STYLES } from '../../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Card, Badge, Button } from '../../components';
+import type { RootStackParamList } from '../../navigation/types';
 
 interface MenuOption {
-  id: string
-  icon: keyof typeof Ionicons.glyphMap
-  label: string
-  action?: () => void
-  badge?: string
+  id: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  action?: () => void;
+  badge?: string;
 }
 
 interface PreferenceOption {
-  id: string
-  label: string
-  description: string
-  enabled: boolean
-  onToggle: (value: boolean) => void
+  id: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+  onToggle: (value: boolean) => void;
 }
 
-const menuOptions: MenuOption[] = [
-  { id: "1", icon: "person-outline", label: "Editar Perfil" },
-  { id: "2", icon: "card-outline", label: "Métodos de Pago" },
-  { id: "3", icon: "location-outline", label: "Direcciones Guardadas", badge: "3" },
-  { id: "4", icon: "star-outline", label: "Rutas Favoritas" },
-  // Ionicons no tiene 'history-outline'; usa 'time-outline' para historial
-  { id: "5", icon: "time-outline", label: "Historial de Transacciones" },
-  { id: "6", icon: "notifications-outline", label: "Notificaciones" },
-]
+const BASE_MENU_OPTIONS: MenuOption[] = [
+  { id: '1', icon: 'person-outline', label: 'Editar Perfil' },
+  { id: '2', icon: 'card-outline', label: 'Métodos de Pago' },
+  // Removed Direcciones Guardadas option per request
+  { id: '4', icon: 'star-outline', label: 'Rutas Favoritas' },
+  { id: '5', icon: 'time-outline', label: 'Historial de Transacciones' },
+  { id: '6', icon: 'notifications-outline', label: 'Notificaciones' },
+];
 
 export default function ProfileScreen() {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [offersEnabled, setOffersEnabled] = useState(true)
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [offersEnabled, setOffersEnabled] = useState(true);
 
   const [preferences, setPreferences] = useState<PreferenceOption[]>([
     {
-      id: "1",
-      label: "Notificaciones de ruta",
-      description: "Recibe alertas de retrasos y cambios",
+      id: '1',
+      label: 'Notificaciones de ruta',
+      description: 'Recibe alertas de retrasos y cambios',
       enabled: notificationsEnabled,
       onToggle: setNotificationsEnabled,
     },
     {
-      id: "2",
-      label: "Ofertas especiales",
-      description: "Recibe promociones y descuentos",
+      id: '2',
+      label: 'Ofertas especiales',
+      description: 'Recibe promociones y descuentos',
       enabled: offersEnabled,
       onToggle: setOffersEnabled,
     },
-  ])
+  ]);
+
+  const menuOptions = useMemo(() => {
+    return BASE_MENU_OPTIONS.map((option) =>
+      option.id === '1' ? { ...option, action: () => navigation.navigate('EditProfile') } : option,
+    );
+  }, [navigation]);
 
   const MenuItem = ({ option }: { option: MenuOption }) => (
     <TouchableOpacity style={styles.menuItem} onPress={option.action} activeOpacity={0.7}>
@@ -67,7 +84,7 @@ export default function ProfileScreen() {
         <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textTertiary} />
       </View>
     </TouchableOpacity>
-  )
+  );
 
   const PreferenceItem = ({ item }: { item: PreferenceOption }) => (
     <View style={styles.preferenceItem}>
@@ -82,18 +99,18 @@ export default function ProfileScreen() {
         thumbColor={item.enabled ? COLORS.success : COLORS.textTertiary}
       />
     </View>
-  )
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Perfil</Text>
         </View>
 
-        {/* User Profile Card */}
-        <Card style={styles.profileCard}>
+        {/* Gradient Profile Card */}
+        <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.profileGradient}>
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
@@ -101,46 +118,38 @@ export default function ProfileScreen() {
               </View>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.userName}>Jesus Rondon</Text>
-              <Text style={styles.userEmail}>jesus.rondon@email.com</Text>
+              <Text style={styles.userNameGradient}>Jesus Rondon</Text>
+              <Text style={styles.userEmailGradient}>jesus.rondon@email.com</Text>
             </View>
             <Badge label="Gold" variant="primary" />
           </View>
-
-          {/* User Stats */}
-          <View style={styles.statsContainer}>
+          {/* Edit chip removed to avoid duplication */}
+          <View style={styles.statsContainerGradient}>
             <View style={styles.statItem}>
-              <View style={styles.statIcon}>
-                <Ionicons name="navigate" size={20} color={COLORS.primary} />
+              <View style={styles.statIconGradient}>
+                <Ionicons name="navigate" size={18} color={COLORS.primary} />
               </View>
-              <Text style={styles.statValue}>156</Text>
-              <Text style={styles.statLabel}>Viajes</Text>
+              <Text style={styles.statValueGradient}>156</Text>
+              <Text style={styles.statLabelGradient}>Viajes</Text>
             </View>
-
-            <View style={styles.statDivider} />
-
+            <View style={styles.statDividerGradient} />
             <View style={styles.statItem}>
-              <View style={styles.statIcon}>
-                <Ionicons name="star" size={20} color={COLORS.warning} />
+              <View style={styles.statIconGradient}>
+                <Ionicons name="star" size={18} color={COLORS.warning} />
               </View>
-              <Text style={styles.statValue}>1,240</Text>
-              <Text style={styles.statLabel}>Puntos</Text>
+              <Text style={styles.statValueGradient}>1,240</Text>
+              <Text style={styles.statLabelGradient}>Puntos</Text>
             </View>
-
-            <View style={styles.statDivider} />
-
+            <View style={styles.statDividerGradient} />
             <View style={styles.statItem}>
-              <View style={styles.statIcon}>
-                {/* Ionicons no incluye 'crown'; usa 'ribbon-outline' como equivalente */}
-                <Ionicons name="ribbon-outline" size={20} color={COLORS.primaryDark} />
+              <View style={styles.statIconGradient}>
+                <Ionicons name="ribbon-outline" size={18} color={COLORS.textInverse} />
               </View>
-              <Text style={styles.statValue}>Gold</Text>
-              <Text style={styles.statLabel}>Nivel</Text>
+              <Text style={styles.statValueGradient}>Gold</Text>
+              <Text style={styles.statLabelGradient}>Nivel</Text>
             </View>
           </View>
-
-          <Button title="Editar Perfil" variant="outline" size="md" style={{ marginTop: SPACING.lg }} />
-        </Card>
+        </LinearGradient>
 
         {/* Menu Section */}
         <View style={styles.section}>
@@ -182,7 +191,7 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: "65%" }]} />
+                <View style={[styles.progressFill, { width: '65%' }]} />
               </View>
               <Text style={styles.progressText}>Faltan 400 puntos para Platinum</Text>
 
@@ -237,7 +246,7 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -260,22 +269,29 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.xl,
   },
+  profileGradient: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.xl,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.xl,
+    gap: SPACING.lg,
+  },
   profileHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.lg,
     marginBottom: SPACING.xl,
   },
   avatarContainer: {
-    position: "relative",
+    position: 'relative',
   },
   avatar: {
     width: 60,
     height: 60,
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileInfo: {
     flex: 1,
@@ -285,22 +301,65 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SPACING.xs,
   },
+  userNameGradient: {
+    ...TEXT_STYLES.subtitle,
+    color: COLORS.textInverse,
+    marginBottom: SPACING.xs,
+    fontWeight: '700',
+  },
   userEmail: {
     ...TEXT_STYLES.caption,
     color: COLORS.textSecondary,
   },
+  userEmailGradient: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.textInverse,
+    opacity: 0.85,
+  },
   statsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.md,
     backgroundColor: COLORS.surfaceAlt,
     borderRadius: RADIUS.md,
     marginBottom: SPACING.lg,
   },
+  statsContainerGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: RADIUS.md,
+  },
+  statIconGradient: {
+    width: 30,
+    height: 30,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(255,255,255,0.20)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statValueGradient: {
+    ...TEXT_STYLES.bodySm,
+    color: COLORS.textInverse,
+    fontWeight: '700',
+  },
+  statLabelGradient: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.textInverse,
+    opacity: 0.75,
+  },
+  statDividerGradient: {
+    width: 1,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  // gradientActionsRow & editChip removed
   statItem: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
     gap: SPACING.xs,
   },
   statIcon: {
@@ -308,13 +367,13 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: RADIUS.md,
     backgroundColor: COLORS.surface,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statValue: {
     ...TEXT_STYLES.bodySm,
     color: COLORS.text,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   statLabel: {
     ...TEXT_STYLES.caption,
@@ -335,17 +394,17 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: COLORS.surface,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
     borderRadius: RADIUS.lg,
   },
   menuItemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.lg,
     flex: 1,
   },
@@ -354,26 +413,26 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: RADIUS.md,
     backgroundColor: COLORS.background,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   menuLabel: {
     ...TEXT_STYLES.bodySm,
     color: COLORS.text,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   menuItemRight: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.md,
   },
   menuSeparator: {
     height: SPACING.md,
   },
   preferenceItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
   },
@@ -383,7 +442,7 @@ const styles = StyleSheet.create({
   preferenceLabel: {
     ...TEXT_STYLES.bodySm,
     color: COLORS.text,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: SPACING.xs,
   },
   preferenceDescription: {
@@ -398,8 +457,8 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   loyaltyHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.lg,
   },
   loyaltyTitle: {
@@ -415,10 +474,10 @@ const styles = StyleSheet.create({
     height: 8,
     backgroundColor: COLORS.background,
     borderRadius: RADIUS.full,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   progressFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: COLORS.warning,
     borderRadius: RADIUS.full,
   },
@@ -427,7 +486,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   benefitsGrid: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: SPACING.lg,
   },
   benefitItem: {
@@ -435,7 +494,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderRadius: RADIUS.md,
     paddingVertical: SPACING.lg,
-    alignItems: "center",
+    alignItems: 'center',
     gap: SPACING.xs,
   },
   benefitValue: {
@@ -450,8 +509,8 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   helpOption: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
     paddingHorizontal: SPACING.lg,
@@ -463,7 +522,7 @@ const styles = StyleSheet.create({
   helpText: {
     ...TEXT_STYLES.bodySm,
     color: COLORS.text,
-    fontWeight: "600",
+    fontWeight: '600',
     flex: 1,
   },
   logoutButton: {
@@ -471,11 +530,11 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   versionContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingBottom: SPACING.xl,
   },
   versionText: {
     ...TEXT_STYLES.caption,
     color: COLORS.textTertiary,
   },
-})
+});
