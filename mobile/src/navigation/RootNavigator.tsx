@@ -203,6 +203,13 @@ export function RootNavigator() {
               {role === 'driver' && <Stack.Screen name="DriverMain" component={DriverTabNavigator} />}
               {role === 'admin' && <Stack.Screen name="AdminMain" component={AdminTabNavigator} />}
               {role === 'user' && <Stack.Screen name="MainApp" component={MainTabNavigator} />}
+              {role === 'user' && (
+                <Stack.Screen
+                  name="EditProfile"
+                  component={require('../screens/main/EditProfileScreen').default}
+                  options={{ animation: 'default', contentStyle: { backgroundColor: COLORS.background } }}
+                />
+              )}
               <Stack.Screen
                 name="RouteDetail"
                 component={RouteDetailScreen}

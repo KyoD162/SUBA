@@ -31,10 +31,6 @@ export default function DriverProfileScreen() {
           <Text style={styles.name}>Conductor Asignado</Text>
           <Text style={styles.role}>Rol • Conductor</Text>
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerBtn}>
-              <Ionicons name="create-outline" size={16} color={COLORS.textInverse} />
-              <Text style={styles.headerBtnText}>Editar</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={[styles.headerBtn, styles.headerBtnGhost]}>
               <Ionicons name="help-circle-outline" size={16} color={COLORS.textInverse} />
               <Text style={styles.headerBtnText}>Soporte</Text>
