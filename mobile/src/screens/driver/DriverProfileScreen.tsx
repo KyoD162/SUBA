@@ -20,7 +20,7 @@ export default function DriverProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <LinearGradient colors={[COLORS.primary, '#3A57D9', '#243C9E']} style={styles.gradientHeader} start={{x:0,y:0}} end={{x:1,y:1}}>
+        <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={styles.gradientHeader} start={{x:0,y:0}} end={{x:1,y:1}}>
           <View style={styles.avatarOuter}> 
             <View style={styles.avatarRing}>
               <View style={styles.avatarInner}>
