@@ -1,58 +1,70 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, FlatList } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Ionicons } from "@expo/vector-icons"
-import { COLORS, SPACING, RADIUS, TEXT_STYLES } from "../../theme"
-import { Card, Badge, Button } from "../../components"
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  FlatList,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { COLORS, SPACING, RADIUS, TEXT_STYLES } from '../../theme';
+import { Card, Badge, Button } from '../../components';
+import type { RootStackParamList } from '../../navigation/types';
 
 interface MenuOption {
-  id: string
-  icon: keyof typeof Ionicons.glyphMap
-  label: string
-  action?: () => void
-  badge?: string
+  id: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  action?: () => void;
+  badge?: string;
 }
 
 interface PreferenceOption {
-  id: string
-  label: string
-  description: string
-  enabled: boolean
-  onToggle: (value: boolean) => void
+  id: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+  onToggle: (value: boolean) => void;
 }
 
 const menuOptions: MenuOption[] = [
-  { id: "1", icon: "person-outline", label: "Editar Perfil" },
-  { id: "2", icon: "card-outline", label: "Métodos de Pago" },
-  { id: "3", icon: "location-outline", label: "Direcciones Guardadas", badge: "3" },
-  { id: "4", icon: "star-outline", label: "Rutas Favoritas" },
+  { id: '1', icon: 'person-outline', label: 'Editar Perfil' },
+  { id: '2', icon: 'card-outline', label: 'Métodos de Pago' },
+  { id: '3', icon: 'location-outline', label: 'Direcciones Guardadas', badge: '3' },
+  { id: '4', icon: 'star-outline', label: 'Rutas Favoritas' },
   // Ionicons no tiene 'history-outline'; usa 'time-outline' para historial
-  { id: "5", icon: "time-outline", label: "Historial de Transacciones" },
-  { id: "6", icon: "notifications-outline", label: "Notificaciones" },
-]
+  { id: '5', icon: 'time-outline', label: 'Historial de Transacciones' },
+  { id: '6', icon: 'notifications-outline', label: 'Notificaciones' },
+];
 
 export default function ProfileScreen() {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [offersEnabled, setOffersEnabled] = useState(true)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [offersEnabled, setOffersEnabled] = useState(true);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [preferences, setPreferences] = useState<PreferenceOption[]>([
     {
-      id: "1",
-      label: "Notificaciones de ruta",
-      description: "Recibe alertas de retrasos y cambios",
+      id: '1',
+      label: 'Notificaciones de ruta',
+      description: 'Recibe alertas de retrasos y cambios',
       enabled: notificationsEnabled,
       onToggle: setNotificationsEnabled,
     },
     {
-      id: "2",
-      label: "Ofertas especiales",
-      description: "Recibe promociones y descuentos",
+      id: '2',
+      label: 'Ofertas especiales',
+      description: 'Recibe promociones y descuentos',
       enabled: offersEnabled,
       onToggle: setOffersEnabled,
     },
-  ])
+  ]);
 
   const MenuItem = ({ option }: { option: MenuOption }) => (
     <TouchableOpacity style={styles.menuItem} onPress={option.action} activeOpacity={0.7}>
@@ -67,7 +79,7 @@ export default function ProfileScreen() {
         <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textTertiary} />
       </View>
     </TouchableOpacity>
-  )
+  );
 
   const PreferenceItem = ({ item }: { item: PreferenceOption }) => (
     <View style={styles.preferenceItem}>
@@ -82,10 +94,10 @@ export default function ProfileScreen() {
         thumbColor={item.enabled ? COLORS.success : COLORS.textTertiary}
       />
     </View>
-  )
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -139,7 +151,12 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <Button title="Editar Perfil" variant="outline" size="md" style={{ marginTop: SPACING.lg }} />
+          <Button
+            title="Editar Perfil"
+            variant="outline"
+            size="md"
+            style={{ marginTop: SPACING.lg }}
+          />
         </Card>
 
         {/* Menu Section */}
@@ -182,7 +199,7 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: "65%" }]} />
+                <View style={[styles.progressFill, { width: '65%' }]} />
               </View>
               <Text style={styles.progressText}>Faltan 400 puntos para Platinum</Text>
 
@@ -220,7 +237,10 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textTertiary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.helpOption}>
+            <TouchableOpacity
+              style={styles.helpOption}
+              onPress={() => navigation.navigate('About')}
+            >
               <Ionicons name="information-circle-outline" size={24} color={COLORS.primary} />
               <Text style={styles.helpText}>Acerca de SUBA</Text>
               <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textTertiary} />
@@ -237,7 +257,7 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -261,21 +281,21 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   profileHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.lg,
     marginBottom: SPACING.xl,
   },
   avatarContainer: {
-    position: "relative",
+    position: 'relative',
   },
   avatar: {
     width: 60,
     height: 60,
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileInfo: {
     flex: 1,
@@ -290,8 +310,8 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   statsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.md,
     backgroundColor: COLORS.surfaceAlt,
@@ -300,7 +320,7 @@ const styles = StyleSheet.create({
   },
   statItem: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
     gap: SPACING.xs,
   },
   statIcon: {
@@ -308,13 +328,13 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: RADIUS.md,
     backgroundColor: COLORS.surface,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statValue: {
     ...TEXT_STYLES.bodySm,
     color: COLORS.text,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   statLabel: {
     ...TEXT_STYLES.caption,
@@ -335,17 +355,17 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: COLORS.surface,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
     borderRadius: RADIUS.lg,
   },
   menuItemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.lg,
     flex: 1,
   },
@@ -354,26 +374,26 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: RADIUS.md,
     backgroundColor: COLORS.background,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   menuLabel: {
     ...TEXT_STYLES.bodySm,
     color: COLORS.text,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   menuItemRight: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.md,
   },
   menuSeparator: {
     height: SPACING.md,
   },
   preferenceItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
   },
@@ -383,7 +403,7 @@ const styles = StyleSheet.create({
   preferenceLabel: {
     ...TEXT_STYLES.bodySm,
     color: COLORS.text,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: SPACING.xs,
   },
   preferenceDescription: {
@@ -398,8 +418,8 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   loyaltyHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.lg,
   },
   loyaltyTitle: {
@@ -415,10 +435,10 @@ const styles = StyleSheet.create({
     height: 8,
     backgroundColor: COLORS.background,
     borderRadius: RADIUS.full,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   progressFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: COLORS.warning,
     borderRadius: RADIUS.full,
   },
@@ -427,7 +447,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   benefitsGrid: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: SPACING.lg,
   },
   benefitItem: {
@@ -435,7 +455,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderRadius: RADIUS.md,
     paddingVertical: SPACING.lg,
-    alignItems: "center",
+    alignItems: 'center',
     gap: SPACING.xs,
   },
   benefitValue: {
@@ -450,8 +470,8 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   helpOption: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
     paddingHorizontal: SPACING.lg,
@@ -463,7 +483,7 @@ const styles = StyleSheet.create({
   helpText: {
     ...TEXT_STYLES.bodySm,
     color: COLORS.text,
-    fontWeight: "600",
+    fontWeight: '600',
     flex: 1,
   },
   logoutButton: {
@@ -471,11 +491,11 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   versionContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingBottom: SPACING.xl,
   },
   versionText: {
     ...TEXT_STYLES.caption,
     color: COLORS.textTertiary,
   },
-})
+});

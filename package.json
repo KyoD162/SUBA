@@ -31,6 +31,11 @@
     "prettier": "^3.3.3"
   },
   "dependencies": {
-    "mongoose": "^8.19.4"
+    "expo": "~54.0.25",
+    "expo-asset": "~12.0.10",
+    "expo-linking": "~8.0.9",
+    "expo-splash-screen": "~31.0.11",
+    "mongoose": "^8.19.4",
+    "semver": "^7.7.3"
   }
 }
