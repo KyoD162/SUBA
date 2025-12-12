@@ -1,5 +1,5 @@
 import type React from "react"
-import { View, Text, StyleSheet, type ViewStyle } from "react-native"
+import { View, Text, StyleSheet, type ViewStyle, type TextStyle } from "react-native"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from "../theme"
 import { scale, verticalScale } from "../utils/responsive"
 
@@ -11,6 +11,7 @@ interface BadgeProps {
   variant?: BadgeVariant
   size?: BadgeSize
   style?: ViewStyle
+  textStyle?: TextStyle
 }
 
 const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
@@ -21,13 +22,13 @@ const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
   neutral: { bg: COLORS.border, text: COLORS.text },
 }
 
-export const Badge: React.FC<BadgeProps> = ({ label, variant = "neutral", size = "md", style }) => {
+export const Badge: React.FC<BadgeProps> = ({ label, variant = "neutral", size = "md", style, textStyle }) => {
   const colors = variantColors[variant]
   const badgeStyle = [styles.base, styles[size], { backgroundColor: colors.bg }, style]
 
   return (
     <View style={badgeStyle}>
-      <Text style={[styles.text, styles[`text_${size}`], { color: colors.text }]}>{label}</Text>
+      <Text style={[styles.text, styles[`text_${size}`], { color: colors.text }, textStyle]}>{label}</Text>
     </View>
   )
 }

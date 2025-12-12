@@ -10,13 +10,20 @@ interface CurrencyDisplayProps {
   usdAmount: number
   showToggle?: boolean
   size?: "sm" | "md" | "lg"
+  compact?: boolean
 }
 
-export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ usdAmount, showToggle = false, size = "md" }) => {
+export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ usdAmount, showToggle = false, size = "md", compact = false }) => {
   const [showBS, setShowBS] = React.useState(false)
   const bsAmount = convertUSDtoBS(usdAmount)
 
-  const textStyle = size === "sm" ? TEXT_STYLES.caption : size === "lg" ? TEXT_STYLES.h3 : TEXT_STYLES.body
+  // Ajuste: 'md' ahora usa el mismo estilo que los valores numéricos (subtitle)
+  const textStyle =
+    size === "sm"
+      ? TEXT_STYLES.caption
+      : size === "lg"
+        ? TEXT_STYLES.h3
+        : TEXT_STYLES.subtitle
 
   return (
     <View style={styles.container}>
@@ -25,6 +32,11 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ usdAmount, sho
           <Text style={[textStyle, styles.mainAmount]}>{showBS ? formatBS(bsAmount) : formatUSD(usdAmount)}</Text>
           <Ionicons name="swap-horizontal" size={16} color={COLORS.primary} />
         </TouchableOpacity>
+      ) : compact ? (
+        <View style={styles.inlineContainer}>
+          <Text style={[textStyle, styles.mainAmount]}>{formatUSD(usdAmount)}</Text>
+          <Text style={[TEXT_STYLES.caption, styles.secondaryInline]}>≈ {formatBS(bsAmount)}</Text>
+        </View>
       ) : (
         <View>
           <Text style={[textStyle, styles.mainAmount]}>{formatUSD(usdAmount)}</Text>
@@ -51,5 +63,13 @@ const styles = StyleSheet.create({
   secondaryAmount: {
     color: COLORS.textTertiary,
     marginTop: SPACING.xs,
+  },
+  inlineContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+  },
+  secondaryInline: {
+    color: COLORS.textTertiary,
   },
 })

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from '../../theme';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Card, Badge, Button } from '../../components';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -34,20 +35,19 @@ interface PreferenceOption {
   onToggle: (value: boolean) => void;
 }
 
-const menuOptions: MenuOption[] = [
+const BASE_MENU_OPTIONS: MenuOption[] = [
   { id: '1', icon: 'person-outline', label: 'Editar Perfil' },
   { id: '2', icon: 'card-outline', label: 'Métodos de Pago' },
-  { id: '3', icon: 'location-outline', label: 'Direcciones Guardadas', badge: '3' },
+  // Removed Direcciones Guardadas option per request
   { id: '4', icon: 'star-outline', label: 'Rutas Favoritas' },
-  // Ionicons no tiene 'history-outline'; usa 'time-outline' para historial
   { id: '5', icon: 'time-outline', label: 'Historial de Transacciones' },
   { id: '6', icon: 'notifications-outline', label: 'Notificaciones' },
 ];
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [offersEnabled, setOffersEnabled] = useState(true);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [preferences, setPreferences] = useState<PreferenceOption[]>([
     {
@@ -65,6 +65,12 @@ export default function ProfileScreen() {
       onToggle: setOffersEnabled,
     },
   ]);
+
+  const menuOptions = useMemo(() => {
+    return BASE_MENU_OPTIONS.map((option) =>
+      option.id === '1' ? { ...option, action: () => navigation.navigate('EditProfile') } : option,
+    );
+  }, [navigation]);
 
   const MenuItem = ({ option }: { option: MenuOption }) => (
     <TouchableOpacity style={styles.menuItem} onPress={option.action} activeOpacity={0.7}>
@@ -104,8 +110,8 @@ export default function ProfileScreen() {
           <Text style={styles.title}>Perfil</Text>
         </View>
 
-        {/* User Profile Card */}
-        <Card style={styles.profileCard}>
+        {/* Gradient Profile Card */}
+        <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.profileGradient}>
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
@@ -113,41 +119,35 @@ export default function ProfileScreen() {
               </View>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.userName}>Jesus Rondon</Text>
-              <Text style={styles.userEmail}>jesus.rondon@email.com</Text>
+              <Text style={styles.userNameGradient}>Jesus Rondon</Text>
+              <Text style={styles.userEmailGradient}>jesus.rondon@email.com</Text>
             </View>
             <Badge label="Gold" variant="primary" />
           </View>
-
-          {/* User Stats */}
-          <View style={styles.statsContainer}>
+          {/* Edit chip removed to avoid duplication */}
+          <View style={styles.statsContainerGradient}>
             <View style={styles.statItem}>
-              <View style={styles.statIcon}>
-                <Ionicons name="navigate" size={20} color={COLORS.primary} />
+              <View style={styles.statIconGradient}>
+                <Ionicons name="navigate" size={18} color={COLORS.primary} />
               </View>
-              <Text style={styles.statValue}>156</Text>
-              <Text style={styles.statLabel}>Viajes</Text>
+              <Text style={styles.statValueGradient}>156</Text>
+              <Text style={styles.statLabelGradient}>Viajes</Text>
             </View>
-
-            <View style={styles.statDivider} />
-
+            <View style={styles.statDividerGradient} />
             <View style={styles.statItem}>
-              <View style={styles.statIcon}>
-                <Ionicons name="star" size={20} color={COLORS.warning} />
+              <View style={styles.statIconGradient}>
+                <Ionicons name="star" size={18} color={COLORS.warning} />
               </View>
-              <Text style={styles.statValue}>1,240</Text>
-              <Text style={styles.statLabel}>Puntos</Text>
+              <Text style={styles.statValueGradient}>1,240</Text>
+              <Text style={styles.statLabelGradient}>Puntos</Text>
             </View>
-
-            <View style={styles.statDivider} />
-
+            <View style={styles.statDividerGradient} />
             <View style={styles.statItem}>
-              <View style={styles.statIcon}>
-                {/* Ionicons no incluye 'crown'; usa 'ribbon-outline' como equivalente */}
-                <Ionicons name="ribbon-outline" size={20} color={COLORS.primaryDark} />
+              <View style={styles.statIconGradient}>
+                <Ionicons name="ribbon-outline" size={18} color={COLORS.textInverse} />
               </View>
-              <Text style={styles.statValue}>Gold</Text>
-              <Text style={styles.statLabel}>Nivel</Text>
+              <Text style={styles.statValueGradient}>Gold</Text>
+              <Text style={styles.statLabelGradient}>Nivel</Text>
             </View>
           </View>
 
@@ -280,6 +280,13 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.xl,
   },
+  profileGradient: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.xl,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.xl,
+    gap: SPACING.lg,
+  },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -305,9 +312,20 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SPACING.xs,
   },
+  userNameGradient: {
+    ...TEXT_STYLES.subtitle,
+    color: COLORS.textInverse,
+    marginBottom: SPACING.xs,
+    fontWeight: '700',
+  },
   userEmail: {
     ...TEXT_STYLES.caption,
     color: COLORS.textSecondary,
+  },
+  userEmailGradient: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.textInverse,
+    opacity: 0.85,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -318,6 +336,38 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     marginBottom: SPACING.lg,
   },
+  statsContainerGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: RADIUS.md,
+  },
+  statIconGradient: {
+    width: 30,
+    height: 30,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(255,255,255,0.20)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statValueGradient: {
+    ...TEXT_STYLES.bodySm,
+    color: COLORS.textInverse,
+    fontWeight: '700',
+  },
+  statLabelGradient: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.textInverse,
+    opacity: 0.75,
+  },
+  statDividerGradient: {
+    width: 1,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  // gradientActionsRow & editChip removed
   statItem: {
     flex: 1,
     alignItems: 'center',

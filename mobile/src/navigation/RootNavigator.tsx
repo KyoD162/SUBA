@@ -75,17 +75,115 @@ function MainTabNavigator() {
   );
 }
 
+function DriverTabNavigator() {
+  const insets = useSafeAreaInsets()
+  return (
+    <DriverTab.Navigator
+      screenOptions={({ route }) => {
+        let iconName: keyof typeof Ionicons.glyphMap = 'map-outline'
+        if (route.name === 'Trip') iconName = 'navigate-outline'
+        else if (route.name === 'DriverProfile') iconName = 'person-outline'
+        return {
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => <Ionicons name={iconName} size={scale(size)} color={color} />,
+          tabBarActiveTintColor: COLORS.primary,
+          tabBarInactiveTintColor: COLORS.textTertiary,
+          safeAreaInsets: { bottom: insets.bottom },
+          tabBarStyle: {
+            backgroundColor: COLORS.surface,
+            borderTopColor: COLORS.border,
+            borderTopWidth: 1,
+            paddingTop: verticalScale(SPACING.xs),
+            paddingBottom: insets.bottom > 0 ? insets.bottom : verticalScale(SPACING.md),
+            minHeight: verticalScale(54) + (insets.bottom || 0),
+          },
+          tabBarLabelStyle: {
+            fontSize: responsiveFont(12),
+            fontWeight: '500',
+            marginTop: verticalScale(2),
+            paddingBottom: verticalScale(2),
+          },
+        }
+      }}
+    >
+      <DriverTab.Screen name="Trip" component={require('../screens/driver/DriverRouteScreen').default} options={{ title: 'Viaje' }} />
+      <DriverTab.Screen name="DriverProfile" component={require('../screens/driver/DriverProfileScreen').default} options={{ title: 'Perfil' }} />
+    </DriverTab.Navigator>
+  )
+}
+
+function AdminTabNavigator() {
+  const insets = useSafeAreaInsets()
+  return (
+    <AdminTab.Navigator
+      screenOptions={({ route }) => {
+        let iconName: keyof typeof Ionicons.glyphMap = 'grid-outline'
+        if (route.name === 'Overview') iconName = 'stats-chart-outline'
+        else if (route.name === 'Rutas') iconName = 'navigate-outline'
+        else if (route.name === 'Conductores') iconName = 'car-outline'
+        else if (route.name === 'Usuarios') iconName = 'people-outline'
+        else if (route.name === 'Precios') iconName = 'pricetag-outline'
+        else if (route.name === 'AdminProfile') iconName = 'person-outline'
+        return {
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => <Ionicons name={iconName} size={scale(size)} color={color} />,
+          tabBarActiveTintColor: COLORS.primary,
+          tabBarInactiveTintColor: COLORS.textTertiary,
+          safeAreaInsets: { bottom: insets.bottom },
+          tabBarStyle: {
+            backgroundColor: COLORS.surface,
+            borderTopColor: COLORS.border,
+            borderTopWidth: 1,
+            paddingTop: verticalScale(SPACING.xs),
+            paddingBottom: insets.bottom > 0 ? insets.bottom : verticalScale(SPACING.md),
+            minHeight: verticalScale(54) + (insets.bottom || 0),
+          },
+          tabBarLabelStyle: {
+            fontSize: responsiveFont(12),
+            fontWeight: '500',
+            marginTop: verticalScale(2),
+            paddingBottom: verticalScale(2),
+          },
+        }
+      }}
+    >
+      <AdminTab.Screen name="Overview" component={require('../screens/admin/OverviewScreen').default} />
+      <AdminTab.Screen name="Rutas" component={require('../screens/admin/RutasScreen').default} />
+      <AdminTab.Screen name="Conductores" component={require('../screens/admin/ConductoresScreen').default} />
+      <AdminTab.Screen name="Usuarios" component={require('../screens/admin/UsuariosScreen').default} />
+      <AdminTab.Screen name="Precios" component={require('../screens/admin/PreciosScreen').default} />
+      <AdminTab.Screen name="AdminProfile" component={require('../screens/admin/AdminProfileScreen').default} options={{ title: 'Perfil' }} />
+    </AdminTab.Navigator>
+  )
+}
+
 export function RootNavigator() {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false)
+  const [role, setRole] = React.useState<'user' | 'driver' | 'admin' | null>(null)
 
   const authValue = React.useMemo(
     () => ({
       isAuthenticated,
-      signIn: () => setIsAuthenticated(true),
-      signOut: () => setIsAuthenticated(false),
+      role,
+      signInUser: () => {
+        setIsAuthenticated(true)
+        setRole('user')
+      },
+      signInDriver: () => {
+        setIsAuthenticated(true)
+        setRole('driver')
+      },
+      signInAdmin: () => {
+        setIsAuthenticated(true)
+        setRole('admin')
+      },
+      signOut: () => {
+        setIsAuthenticated(false)
+        setRole(null)
+      },
     }),
-    [isAuthenticated],
-  );
+    [isAuthenticated, role]
+  )
 
   return (
     <AuthContext.Provider value={authValue}>
@@ -98,45 +196,42 @@ export function RootNavigator() {
               animation: 'default',
             }}
           >
-            {isAuthenticated ? (
-              <Stack.Group>
-                <Stack.Screen name="MainApp" component={MainTabNavigator} />
+          {isAuthenticated ? (
+            <Stack.Group>
+              {role === 'driver' && <Stack.Screen name="DriverMain" component={DriverTabNavigator} />}
+              {role === 'admin' && <Stack.Screen name="AdminMain" component={AdminTabNavigator} />}
+              {role === 'user' && <Stack.Screen name="MainApp" component={MainTabNavigator} />}
+              {role === 'user' && (
                 <Stack.Screen
-                  name="RouteDetail"
-                  component={RouteDetailScreen}
-                  options={{
-                    animation: 'default',
-                    // native-stack uses contentStyle instead of cardStyle
-                    contentStyle: { backgroundColor: COLORS.background },
-                  }}
+                  name="EditProfile"
+                  component={require('../screens/main/EditProfileScreen').default}
+                  options={{ animation: 'default', contentStyle: { backgroundColor: COLORS.background } }}
                 />
-                <Stack.Screen
-                  name="PaymentCheckout"
-                  component={PaymentCheckoutScreen}
-                  options={{
-                    animation: 'default',
-                    contentStyle: { backgroundColor: COLORS.background },
-                  }}
-                />
-                <Stack.Screen
-                  name="About"
-                  component={AboutScreen}
-                  options={{
-                    headerShown: true,
-                    title: 'Acerca de SUBA',
-                    contentStyle: { backgroundColor: COLORS.background },
-                  }}
-                />
-              </Stack.Group>
-            ) : (
-              <Stack.Group screenOptions={{ animation: 'none' }}>
-                <Stack.Screen name="Auth" component={LoginScreen} />
-                <Stack.Screen
-                  name="Register"
-                  component={require('../screens/auth/RegisterScreen').default}
-                />
-              </Stack.Group>
-            )}
+              )}
+              <Stack.Screen
+                name="RouteDetail"
+                component={RouteDetailScreen}
+                options={{
+                  animation: "default",
+                  // native-stack uses contentStyle instead of cardStyle
+                  contentStyle: { backgroundColor: COLORS.background },
+                }}
+              />
+              <Stack.Screen
+                name="PaymentCheckout"
+                component={PaymentCheckoutScreen}
+                options={{
+                  animation: "default",
+                  contentStyle: { backgroundColor: COLORS.background },
+                }}
+              />
+            </Stack.Group>
+          ) : (
+            <Stack.Group screenOptions={{ animation: "none" }}>
+              <Stack.Screen name="Auth" component={LoginScreen} />
+              <Stack.Screen name="Register" component={require("../screens/auth/RegisterScreen").default} />
+            </Stack.Group>
+          )}
           </Stack.Navigator>
         </NavigationContainer>
       </TicketsProvider>
