@@ -1,6 +1,6 @@
-import type { NavigatorScreenParams } from "@react-navigation/native"
-import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs"
-import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export type DriverTabParamList = {
   Trip: undefined
@@ -25,17 +25,21 @@ export type RootStackParamList = {
   PaymentCheckout: { packageId: string }
   Register: undefined
   EditProfile: undefined
+  About: undefined
 }
 
 export type MainTabParamList = {
-  Home: undefined
-  Routes: undefined
-  Tickets: undefined
-  Profile: undefined
-}
+  Home: undefined;
+  Routes: undefined;
+  Tickets: undefined;
+  Profile: undefined;
+};
 
 export type DriverTabScreenProps<T extends keyof DriverTabParamList> = BottomTabScreenProps<DriverTabParamList, T>
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>
 
-export type MainTabScreenProps<T extends keyof MainTabParamList> = BottomTabScreenProps<MainTabParamList, T>
+export type MainTabScreenProps<T extends keyof MainTabParamList> = BottomTabScreenProps<
+  MainTabParamList,
+  T
+>;
