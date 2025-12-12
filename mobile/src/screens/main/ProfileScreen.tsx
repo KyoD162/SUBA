@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from '../../theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card, Badge, Button } from '../../components';
@@ -149,7 +150,14 @@ export default function ProfileScreen() {
               <Text style={styles.statLabelGradient}>Nivel</Text>
             </View>
           </View>
-        </LinearGradient>
+
+          <Button
+            title="Editar Perfil"
+            variant="outline"
+            size="md"
+            style={{ marginTop: SPACING.lg }}
+          />
+        </Card>
 
         {/* Menu Section */}
         <View style={styles.section}>
@@ -229,7 +237,10 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textTertiary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.helpOption}>
+            <TouchableOpacity
+              style={styles.helpOption}
+              onPress={() => navigation.navigate('About')}
+            >
               <Ionicons name="information-circle-outline" size={24} color={COLORS.primary} />
               <Text style={styles.helpText}>Acerca de SUBA</Text>
               <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textTertiary} />
