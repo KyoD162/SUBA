@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -156,8 +156,9 @@ export default function ProfileScreen() {
             variant="outline"
             size="md"
             style={{ marginTop: SPACING.lg }}
+            onPress={() => navigation.navigate('EditProfile')}
           />
-        </Card>
+        </LinearGradient>
 
         {/* Menu Section */}
         <View style={styles.section}>
@@ -237,10 +238,7 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textTertiary} />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.helpOption}
-              onPress={() => navigation.navigate('About')}
-            >
+            <TouchableOpacity style={styles.helpOption}>
               <Ionicons name="information-circle-outline" size={24} color={COLORS.primary} />
               <Text style={styles.helpText}>Acerca de SUBA</Text>
               <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textTertiary} />
