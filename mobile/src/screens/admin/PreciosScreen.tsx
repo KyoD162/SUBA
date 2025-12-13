@@ -1,5 +1,3 @@
-"use client"
-
 import React, { useState } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { StyleSheet, View, Text, Alert, Switch, ScrollView, TouchableOpacity, TextInput } from "react-native"
@@ -178,7 +176,7 @@ const PreciosScreen: React.FC = () => {
           style={{ flex: 1 }}
         >
           <View style={styles.content}>
-
+            <Text style={styles.title}>Gestión de Precios</Text>
             
             <Card style={styles.card}>
               <Text style={styles.cardTitle}>Precio del Ticket</Text>
