@@ -1,50 +1,50 @@
-'use client';
+import React from "react"
+import { NavigationContainer } from "@react-navigation/native"
+import { createNativeStackNavigator } from "@react-navigation/native-stack"
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { Ionicons } from "@expo/vector-icons"
+import { scale, verticalScale, responsiveFont } from "../utils/responsive"
 
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { scale, verticalScale, responsiveFont } from '../utils/responsive';
-
-import type { RootStackParamList, MainTabParamList } from './types';
-import { COLORS, SPACING } from '../theme';
-import { AuthContext } from './AuthContext';
-import { TicketsProvider } from './TicketsContext';
+import type { RootStackParamList, MainTabParamList, DriverTabParamList, AdminTabParamList } from "./types"
+import { COLORS, SPACING } from "../theme"
+import { AuthContext } from "./AuthContext"
+import { TicketsProvider } from "./TicketsContext"
 
 // Auth screens
-import LoginScreen from '../screens/auth/LoginScreen';
+import LoginScreen from "../screens/auth/LoginScreen"
 
 // Main app screens
-import HomeScreen from '../screens/main/HomeScreen';
-import RoutesScreen from '../screens/main/RoutesMapScreen';
-import TicketsScreen from '../screens/main/TicketsScreen';
-import ProfileScreen from '../screens/main/ProfileScreen';
-import AboutScreen from '../screens/main/AboutScreen';
+import HomeScreen from "../screens/main/HomeScreen"
+import RoutesScreen from "../screens/main/RoutesMapScreen"
+import TicketsScreen from "../screens/main/TicketsScreen"
+import ProfileScreen from "../screens/main/ProfileScreen"
+// AdminPanel eliminado
 
 // Detail screens
-import RouteDetailScreen from '../screens/details/RouteDetailScreen';
-import PaymentCheckoutScreen from '../screens/details/PaymentCheckoutScreen';
+import RouteDetailScreen from "../screens/details/RouteDetailScreen"
+import PaymentCheckoutScreen from "../screens/details/PaymentCheckoutScreen"
+// Admin screens will be lazy loaded in AdminTabNavigator
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>()
+const Tab = createBottomTabNavigator<MainTabParamList>()
+const DriverTab = createBottomTabNavigator<DriverTabParamList>()
+const AdminTab = createBottomTabNavigator<AdminTabParamList>()
 
 function MainTabNavigator() {
-  const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets()
+  const auth = React.useContext(AuthContext)
   return (
     <Tab.Navigator
       screenOptions={({ route }) => {
-        let iconName: keyof typeof Ionicons.glyphMap = 'home';
-        if (route.name === 'Home') iconName = 'home-outline';
-        else if (route.name === 'Routes') iconName = 'navigate-outline';
-        else if (route.name === 'Tickets') iconName = 'ticket-outline';
-        else if (route.name === 'Profile') iconName = 'person-outline';
+        let iconName: keyof typeof Ionicons.glyphMap = "home"
+        if (route.name === "Home") iconName = "home-outline"
+        else if (route.name === "Routes") iconName = "navigate-outline"
+        else if (route.name === "Tickets") iconName = "ticket-outline"
+        else if (route.name === "Profile") iconName = "person-outline"
         return {
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name={iconName} size={scale(size)} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Ionicons name={iconName} size={scale(size)} color={color} />,
           tabBarActiveTintColor: COLORS.primary,
           tabBarInactiveTintColor: COLORS.textTertiary,
           safeAreaInsets: { bottom: insets.bottom },
@@ -60,19 +60,19 @@ function MainTabNavigator() {
           },
           tabBarLabelStyle: {
             fontSize: responsiveFont(12),
-            fontWeight: '500',
+            fontWeight: "500",
             marginTop: verticalScale(2),
             paddingBottom: verticalScale(2),
           },
-        };
+        }
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Inicio' }} />
-      <Tab.Screen name="Routes" component={RoutesScreen} options={{ title: 'Rutas' }} />
-      <Tab.Screen name="Tickets" component={TicketsScreen} options={{ title: 'Mis Tickets' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil' }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: "Inicio" }} />
+      <Tab.Screen name="Routes" component={RoutesScreen} options={{ title: "Rutas" }} />
+      <Tab.Screen name="Tickets" component={TicketsScreen} options={{ title: "Mis Tickets" }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil" }} />
     </Tab.Navigator>
-  );
+  )
 }
 
 function DriverTabNavigator() {
@@ -107,6 +107,14 @@ function DriverTabNavigator() {
       }}
     >
       <DriverTab.Screen name="Trip" component={require('../screens/driver/DriverRouteScreen').default} options={{ title: 'Viaje' }} />
+      <DriverTab.Screen 
+        name="CargarPasajero" 
+        component={require('../screens/driver/CargarPasajeroScreen').default} 
+        options={{ 
+          title: 'Cargar Pasajero',
+          tabBarButton: () => null, // Hide from tab bar
+        }} 
+      />
       <DriverTab.Screen name="DriverProfile" component={require('../screens/driver/DriverProfileScreen').default} options={{ title: 'Perfil' }} />
     </DriverTab.Navigator>
   )
@@ -190,11 +198,11 @@ export function RootNavigator() {
       <TicketsProvider>
         <NavigationContainer>
           <Stack.Navigator
-            screenOptions={{
-              headerShown: false,
-              // use native-stack 'animation' instead of deprecated/unsupported 'animationEnabled'
-              animation: 'default',
-            }}
+        screenOptions={{
+          headerShown: false,
+          // use native-stack 'animation' instead of deprecated/unsupported 'animationEnabled'
+          animation: "default",
+        }}
           >
           {isAuthenticated ? (
             <Stack.Group>
@@ -236,5 +244,5 @@ export function RootNavigator() {
         </NavigationContainer>
       </TicketsProvider>
     </AuthContext.Provider>
-  );
+  )
 }

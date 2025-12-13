@@ -5,6 +5,14 @@ import { Ionicons } from '@expo/vector-icons'
 import MapWebView from '../../components/MapWebView'
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from '../../theme'
 import { Card } from '../../components'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { DriverTabParamList } from '../../navigation/types'
+
+type NavigationProp = NativeStackNavigationProp<DriverTabParamList, 'Trip'>
+
+interface DriverRouteScreenProps {
+  navigation: NavigationProp
+}
 
 // Mock assigned route (simplified version of user routes data)
 const ASSIGNED_ROUTE = {
@@ -20,7 +28,7 @@ const ASSIGNED_ROUTE = {
   busPositions: [{ id: 'bus1', lat: 8.2874, lng: -62.746, label: 'Bus' }],
 }
 
-export default function DriverRouteScreen() {
+export default function DriverRouteScreen({ navigation }: DriverRouteScreenProps) {
   const insets = useSafeAreaInsets()
   const [tripStarted, setTripStarted] = useState(false)
   const [startTime, setStartTime] = useState<number | null>(null)
@@ -111,36 +119,65 @@ export default function DriverRouteScreen() {
       {/* Bottom panel */}
       <View style={[styles.bottomPanel, { paddingBottom: Math.max(insets.bottom, 4), minHeight: panelMin }]}> 
         <View style={styles.bottomCard}>
-          <View style={styles.bottomCardHeader}> 
-            <Text style={styles.panelTitle}>Paradas ({ASSIGNED_ROUTE.stops.length})</Text>
+          {/* Stops list on the left */}
+          <View style={styles.stopsContainer}>
+            <View style={styles.stopsHeader}> 
+              <Text style={styles.panelTitle}>Paradas ({ASSIGNED_ROUTE.stops.length})</Text>
+            </View>
+            <FlatList
+              data={ASSIGNED_ROUTE.stops}
+              keyExtractor={s => s.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: SPACING.xs }}
+              renderItem={({ item }) => (
+                <View style={styles.stopRow}> 
+                  <Ionicons name="pin" size={14} color={ASSIGNED_ROUTE.color} />
+                  <Text style={styles.stopName}>{item.name}</Text>
+                </View>
+              )}
+            />
           </View>
-          <View style={styles.bottomActionsRow}>
-            <TouchableOpacity style={styles.bottomActionBtn} onPress={() => setPassengers(p=>p+1)} accessibilityRole="button">
-              <Ionicons name="add-outline" size={18} color={COLORS.textInverse} />
-              <Text style={styles.bottomActionText}>Cargar</Text>
+
+          {/* Actions on the right */}
+          <View style={styles.actionsContainer}>
+            {/* Big Load Button */}
+            <TouchableOpacity 
+              style={styles.loadButton} 
+              onPress={() => navigation.navigate('CargarPasajero' as any)}
+              accessibilityRole="button"
+            >
+              <Ionicons name="person-add" size={24} color={COLORS.textInverse} />
+              <Text style={styles.loadButtonText}>Cargar</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.bottomActionBtn, styles.bottomActionSecondary]} accessibilityRole="button">
-              <Ionicons name="alert-circle-outline" size={18} color={COLORS.primary} />
-              <Text style={[styles.bottomActionText, styles.bottomActionSecondaryText]}>Incidente</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.bottomActionBtn, styles.bottomActionSecondary]} accessibilityRole="button">
-              <Ionicons name="chatbubble-ellipses-outline" size={18} color={COLORS.primary} />
-              <Text style={[styles.bottomActionText, styles.bottomActionSecondaryText]}>Mensaje</Text>
-            </TouchableOpacity>
+
+            {/* Small icon buttons */}
+            <View style={styles.iconButtonsRow}>
+              <TouchableOpacity 
+                style={styles.iconButton}
+                accessibilityRole="button"
+                accessibilityLabel="Mensaje"
+              >
+                <Ionicons name="chatbubble" size={22} color={COLORS.primary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.iconButton}
+                accessibilityRole="button"
+                accessibilityLabel="Reportar incidente"
+              >
+                <Ionicons name="warning" size={22} color={COLORS.danger} />
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.iconButton}
+                accessibilityRole="button"
+                accessibilityLabel="Edición manual"
+              >
+                <Ionicons name="pencil" size={22} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-        <FlatList
-          data={ASSIGNED_ROUTE.stops}
-          keyExtractor={s => s.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: SPACING.sm }}
-          renderItem={({ item }) => (
-            <View style={styles.stopRow}> 
-              <Ionicons name="pin" size={16} color={ASSIGNED_ROUTE.color} />
-              <Text style={styles.stopName}>{item.name}</Text>
-            </View>
-          )}
-        />
       </View>
     </SafeAreaView>
   )
@@ -172,19 +209,87 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderTopLeftRadius: RADIUS.xl,
     borderTopRightRadius: RADIUS.xl,
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.sm,
-    gap: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: 0,
     shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 6,
   },
-  bottomCard: { backgroundColor: COLORS.background, borderRadius: RADIUS.lg, padding: SPACING.sm, gap: SPACING.sm, borderWidth:1, borderColor: COLORS.border },
-  bottomCardHeader: { flexDirection:'row', justifyContent:'space-between', alignItems:'center' },
-  panelTitle: { ...TEXT_STYLES.subtitle, color: COLORS.text },
-  bottomActionsRow: { flexDirection:'row', gap: SPACING.xs, justifyContent:'space-between' },
-  bottomActionBtn: { flex:1, flexDirection:'row', alignItems:'center', justifyContent:'center', gap: SPACING.xs, backgroundColor: COLORS.primary, paddingVertical: 6, borderRadius: RADIUS.full },
-  bottomActionText: { ...TEXT_STYLES.caption, color: COLORS.textInverse, fontWeight:'600' },
-  bottomActionSecondary: { backgroundColor: COLORS.surface, borderWidth:1, borderColor: COLORS.border },
-  bottomActionSecondaryText: { color: COLORS.primary },
-  stopRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.xs },
-  stopName: { ...TEXT_STYLES.bodySm, color: COLORS.text },
+  bottomCard: { 
+    flexDirection: 'row',
+    backgroundColor: COLORS.background, 
+    borderRadius: RADIUS.lg, 
+    padding: SPACING.md, 
+    gap: SPACING.md, 
+    borderWidth: 1, 
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    marginBottom: SPACING.xs,
+  },
+  stopsContainer: {
+    flex: 1,
+    gap: SPACING.xs,
+  },
+  stopsHeader: { 
+    paddingBottom: SPACING.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  panelTitle: { 
+    ...TEXT_STYLES.subtitle, 
+    color: COLORS.text,
+    fontWeight: '700',
+  },
+  stopRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: SPACING.xs, 
+    paddingVertical: SPACING.xs,
+  },
+  stopName: { 
+    ...TEXT_STYLES.caption, 
+    color: COLORS.text,
+    fontWeight: '500',
+  },
+  actionsContainer: {
+    width: 100,
+    gap: SPACING.sm,
+  },
+  loadButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  loadButtonText: {
+    ...TEXT_STYLES.bodySm,
+    color: COLORS.textInverse,
+    fontWeight: '700',
+  },
+  iconButtonsRow: {
+    flexDirection: 'row',
+    gap: SPACING.xs,
+    justifyContent: 'space-between',
+  },
+  iconButton: {
+    flex: 1,
+    aspectRatio: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
 })
