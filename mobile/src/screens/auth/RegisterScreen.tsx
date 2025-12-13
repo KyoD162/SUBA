@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES, globalStyles } from "../../theme"
 import { useAuth } from "../../navigation/AuthContext"
 import { useNavigation } from "@react-navigation/native"
+import { authService } from "../../services/auth"
 
 export default function RegisterScreen() {
   const navigation = useNavigation()
@@ -24,6 +25,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [specialDiscount, setSpecialDiscount] = useState<'none' | 'student' | 'disabled' | 'senior'>('none')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -56,13 +58,22 @@ export default function RegisterScreen() {
     setStep((s) => Math.max(1, s - 1))
   }
 
-  const submit = () => {
+  const submit = async () => {
     setLoading(true)
-    setTimeout(() => {
+    try {
+      await authService.registerRider({
+        email,
+        password,
+        name: fullName,
+        phone: telefono,
+        specialDiscount
+      });
+      signInUser();
+    } catch (error: any) {
+      alert(error.message || 'Error al registrar');
+    } finally {
       setLoading(false)
-      // Simulate account creation success → sign in and go to app
-      signInUser()
-    }, 1200)
+    }
   }
 
   const progressAnim = useRef(new Animated.Value(1 / totalSteps)).current
@@ -158,6 +169,29 @@ export default function RegisterScreen() {
           onChangeText={setEdad}
         />
       </Field>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Descuento Especial</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {[
+            { label: 'Ninguno', value: 'none' },
+            { label: 'Estudiante', value: 'student' },
+            { label: 'Discapacitado', value: 'disabled' },
+            { label: 'Tercera Edad', value: 'senior' },
+          ].map((opt) => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[
+                styles.input, 
+                { flex: 0, minWidth: '45%', justifyContent: 'center', alignItems: 'center', backgroundColor: specialDiscount === opt.value ? COLORS.primary : COLORS.surface }
+              ]}
+              onPress={() => setSpecialDiscount(opt.value as any)}
+            >
+              <Text style={{ color: specialDiscount === opt.value ? COLORS.textInverse : COLORS.text }}>{opt.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
     </View>
   )
 

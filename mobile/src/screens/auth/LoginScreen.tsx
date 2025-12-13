@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES, globalStyles } from "../../theme"
@@ -9,24 +9,36 @@ import { useAuth } from "../../navigation/AuthContext"
 import { useNavigation } from "@react-navigation/native"
 import type { RootStackParamList } from "../../navigation/types"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { authService } from "../../services/auth"
 
 export default function LoginScreen() {
   const { signInUser, signInDriver, signInAdmin } = useAuth()
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  // Estados separados para evitar que ambos botones muestren loading simultáneamente
+  const [role, setRole] = useState<'rider' | 'driver' | 'admin'>('rider')
   const [userLoading, setUserLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (userLoading) return
     setUserLoading(true)
-    // Simulación de API
-    setTimeout(() => {
+    try {
+      const response = await authService.login({ email, password, role });
+      // Assuming response contains token and user info
+      // We need to update AuthContext to store token/user, but for now we use the existing signIn methods
+      // Ideally signIn methods should accept token/user data.
+      // Since I can't easily change AuthContext right now without reading it, I'll assume the existing methods just set state.
+      
+      if (role === 'rider') signInUser()
+      else if (role === 'driver') signInDriver()
+      else if (role === 'admin') signInAdmin()
+      
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Credenciales inválidas")
+    } finally {
       setUserLoading(false)
-      signInUser()
-    }, 1000)
+    }
   }
 
   return (
@@ -43,6 +55,21 @@ export default function LoginScreen() {
 
         {/* Form */}
         <View style={styles.form}>
+          {/* Role Selector */}
+          <View style={styles.roleSelector}>
+            {(['rider', 'driver', 'admin'] as const).map((r) => (
+              <TouchableOpacity
+                key={r}
+                style={[styles.roleButton, role === r && styles.roleButtonActive]}
+                onPress={() => setRole(r)}
+              >
+                <Text style={[styles.roleButtonText, role === r && styles.roleButtonTextActive]}>
+                  {r === 'rider' ? 'Usuario' : r === 'driver' ? 'Conductor' : 'Admin'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           {/* Email Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Correo electrónico</Text>
@@ -101,51 +128,6 @@ export default function LoginScreen() {
               <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
             )}
           </TouchableOpacity>
-
-          {/* Botón admin justo debajo del primario */}
-          <TouchableOpacity
-            style={styles.adminButton}
-            onPress={() => {
-              if (userLoading) return
-              setUserLoading(true)
-              setTimeout(() => {
-                setUserLoading(false)
-                signInAdmin()
-              }, 800)
-            }}
-            accessibilityRole="button"
-            disabled={userLoading}
-          >
-            {userLoading ? (
-              <ActivityIndicator color={COLORS.textInverse} />
-            ) : (
-              <Text style={styles.adminButtonText}>Ingresar como admin</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>¿Eres conductor?</Text>
-            <View style={styles.divider} />
-          </View>
-          <TouchableOpacity
-            style={styles.driverButton}
-            onPress={() => {
-              if (userLoading) return
-              setUserLoading(true)
-              setTimeout(() => {
-                setUserLoading(false)
-                signInDriver()
-              }, 800)
-            }}
-            disabled={userLoading}
-          >
-            {userLoading ? (
-              <ActivityIndicator color={COLORS.textInverse} />
-            ) : (
-              <Text style={styles.driverButtonText}>Ingresar como conductor</Text>
-            )}
-          </TouchableOpacity>
         </View>
 
         {/* Footer */}
@@ -194,6 +176,32 @@ const styles = StyleSheet.create({
   },
   form: {
     marginTop: SPACING.xl,
+  },
+  roleSelector: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: 4,
+    marginBottom: SPACING.xl,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  roleButton: {
+    flex: 1,
+    paddingVertical: SPACING.sm,
+    alignItems: 'center',
+    borderRadius: RADIUS.md,
+  },
+  roleButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+  roleButtonText: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  roleButtonTextActive: {
+    color: COLORS.textInverse,
   },
   inputGroup: {
     marginBottom: SPACING.xl,

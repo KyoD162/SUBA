@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken';
 export interface IUser {
   email: string;
   password: string;
+  name?: string;
+  phone?: string;
   role: 'rider' | 'driver' | 'admin';
   comparePassword(candidate: string): Promise<boolean>;
   generateToken(): string;
@@ -14,9 +16,11 @@ const UserSchema = new Schema<IUser>(
   {
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
+    name: { type: String },
+    phone: { type: String },
     role: { type: String, enum: ['rider', 'driver', 'admin'], default: 'rider' },
   },
-  { timestamps: true }
+  { timestamps: true, discriminatorKey: 'role' }
 );
 
 UserSchema.pre('save', async function (this: HydratedDocument<IUser>, next: CallbackWithoutResultAndOptionalError) {
