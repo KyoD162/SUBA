@@ -10,34 +10,70 @@ import { useNavigation } from "@react-navigation/native"
 import type { RootStackParamList } from "../../navigation/types"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { authService } from "../../services/auth"
+import { validateEmail, validatePassword, sanitizeInput } from "../../utils/validation"
 
 export default function LoginScreen() {
-  const { signInUser, signInDriver, signInAdmin } = useAuth()
+  const { signIn } = useAuth()
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState<'rider' | 'driver' | 'admin'>('rider')
   const [userLoading, setUserLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  
+  // Estados de error
+  const [emailError, setEmailError] = useState("")
+  const [passwordError, setPasswordError] = useState("")
 
   const handleLogin = async () => {
     if (userLoading) return
+    
+    // Limpiar errores previos
+    setEmailError("")
+    setPasswordError("")
+    
+    // Validar email
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.isValid) {
+      setEmailError(emailValidation.error || "")
+      return
+    }
+    
+    // Validar contraseña
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.error || "")
+      return
+    }
+    
     setUserLoading(true)
     try {
-      const response = await authService.login({ email, password, role });
-      // Assuming response contains token and user info
-      // We need to update AuthContext to store token/user, but for now we use the existing signIn methods
-      // Ideally signIn methods should accept token/user data.
-      // Since I can't easily change AuthContext right now without reading it, I'll assume the existing methods just set state.
-      
-      if (role === 'rider') signInUser()
-      else if (role === 'driver') signInDriver()
-      else if (role === 'admin') signInAdmin()
-      
+      // Sanitizar inputs antes de enviar
+      const sanitizedEmail = sanitizeInput(email.toLowerCase())
+      const response = await authService.login({ email: sanitizedEmail, password, role });
+      // response contains { token, refreshToken, user: { id, email, role, name } }
+      await signIn(response.token, response.refreshToken, response.user);
     } catch (error: any) {
       Alert.alert("Error", error.message || "Credenciales inválidas")
     } finally {
       setUserLoading(false)
+    }
+  }
+  
+  // Validación en tiempo real del email
+  const handleEmailChange = (text: string) => {
+    setEmail(text)
+    if (emailError) {
+      // Limpiar error si el usuario está escribiendo
+      setEmailError("")
+    }
+  }
+  
+  // Validación en tiempo real de la contraseña
+  const handlePasswordChange = (text: string) => {
+    setPassword(text)
+    if (passwordError) {
+      setPasswordError("")
     }
   }
 
@@ -73,32 +109,34 @@ export default function LoginScreen() {
           {/* Email Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Correo electrónico</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={COLORS.textTertiary} />
+            <View style={[styles.inputContainer, emailError && styles.inputContainerError]}>
+              <Ionicons name="mail-outline" size={20} color={emailError ? COLORS.error : COLORS.textTertiary} />
               <TextInput
                 style={styles.input}
                 placeholder="tu@email.com"
                 placeholderTextColor={COLORS.textTertiary}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={handleEmailChange}
                 keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
                 editable={!userLoading}
               />
             </View>
+            {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
           </View>
 
-          {/* Password Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Contraseña</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textTertiary} />
+          {/* Password In[styles.inputContainer, passwordError && styles.inputContainerError]}>
+              <Ionicons name="lock-closed-outline" size={20} color={passwordError ? COLORS.error : COLORS.textTertiary} />
               <TextInput
                 style={[styles.input, { flex: 1 }]}
                 placeholder="••••••••"
                 placeholderTextColor={COLORS.textTertiary}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={handlePasswordChange}
                 secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
                 editable={!userLoading}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
@@ -106,6 +144,10 @@ export default function LoginScreen() {
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
                   color={COLORS.textTertiary}
+                />
+              </TouchableOpacity>
+            </View>
+            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}olor={COLORS.textTertiary}
                 />
               </TouchableOpacity>
             </View>
@@ -219,7 +261,17 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     paddingHorizontal: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borContainerError: {
+    borderColor: COLORS.error,
+    borderWidth: 1.5,
+  },
+  errorText: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.error,
+    marginTop: SPACING.xs,
+    marginLeft: SPACING.sm,
+  },
+  inputderColor: COLORS.border,
     gap: SPACING.md,
   },
   input: {

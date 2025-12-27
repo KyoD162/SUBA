@@ -1,24 +1,29 @@
 import { Router } from 'express';
 import { auth } from '../middlewares/auth';
+import { authLimiter, refreshTokenLimiter } from '../middlewares/rateLimiter';
 import { 
   loginRider, loginDriver, loginAdmin, 
   registerRider, registerDriver, registerAdmin,
-  profile 
+  profile,
+  refreshToken
 } from '../controllers/auth.controller';
 
 export const authRouter = Router();
 
-// Rider (User)
-authRouter.post('/register/rider', registerRider);
-authRouter.post('/login/rider', loginRider);
+// Rider (User) - con rate limiting
+authRouter.post('/register/rider', authLimiter, registerRider);
+authRouter.post('/login/rider', authLimiter, loginRider);
 
-// Driver
-authRouter.post('/register/driver', registerDriver);
-authRouter.post('/login/driver', loginDriver);
+// Driver - con rate limiting
+authRouter.post('/register/driver', authLimiter, registerDriver);
+authRouter.post('/login/driver', authLimiter, loginDriver);
 
-// Admin
-authRouter.post('/register/admin', registerAdmin);
-authRouter.post('/login/admin', loginAdmin);
+// Admin - con rate limiting
+authRouter.post('/register/admin', authLimiter, registerAdmin);
+authRouter.post('/login/admin', authLimiter, loginAdmin);
+
+// Token refresh - con rate limiting más permisivo
+authRouter.post('/refresh', refreshTokenLimiter, refreshToken);
 
 // Generic/Profile
 authRouter.get('/me', auth(true), profile);

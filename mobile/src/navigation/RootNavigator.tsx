@@ -8,7 +8,7 @@ import { scale, verticalScale, responsiveFont } from "../utils/responsive"
 
 import type { RootStackParamList, MainTabParamList, DriverTabParamList, AdminTabParamList } from "./types"
 import { COLORS, SPACING } from "../theme"
-import { AuthContext } from "./AuthContext"
+import { AuthProvider, useAuth } from "./AuthContext"
 import { TicketsProvider } from "./TicketsContext"
 
 // Auth screens
@@ -33,7 +33,6 @@ const AdminTab = createBottomTabNavigator<AdminTabParamList>()
 
 function MainTabNavigator() {
   const insets = useSafeAreaInsets()
-  const auth = React.useContext(AuthContext)
   return (
     <Tab.Navigator
       screenOptions={({ route }) => {
@@ -165,84 +164,70 @@ function AdminTabNavigator() {
   )
 }
 
-export function RootNavigator() {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false)
-  const [role, setRole] = React.useState<'user' | 'driver' | 'admin' | null>(null)
+function NavigationContent() {
+  const { isAuthenticated, user, isLoading } = useAuth()
 
-  const authValue = React.useMemo(
-    () => ({
-      isAuthenticated,
-      role,
-      signInUser: () => {
-        setIsAuthenticated(true)
-        setRole('user')
-      },
-      signInDriver: () => {
-        setIsAuthenticated(true)
-        setRole('driver')
-      },
-      signInAdmin: () => {
-        setIsAuthenticated(true)
-        setRole('admin')
-      },
-      signOut: () => {
-        setIsAuthenticated(false)
-        setRole(null)
-      },
-    }),
-    [isAuthenticated, role]
-  )
+  if (isLoading) {
+    // Podríamos mostrar un splash screen aquí
+    return null
+  }
+
+  const role = user?.role
 
   return (
-    <AuthContext.Provider value={authValue}>
-      <TicketsProvider>
-        <NavigationContainer>
-          <Stack.Navigator
+    <NavigationContainer>
+      <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          // use native-stack 'animation' instead of deprecated/unsupported 'animationEnabled'
           animation: "default",
         }}
-          >
-          {isAuthenticated ? (
-            <Stack.Group>
-              {role === 'driver' && <Stack.Screen name="DriverMain" component={DriverTabNavigator} />}
-              {role === 'admin' && <Stack.Screen name="AdminMain" component={AdminTabNavigator} />}
-              {role === 'user' && <Stack.Screen name="MainApp" component={MainTabNavigator} />}
-              {role === 'user' && (
-                <Stack.Screen
-                  name="EditProfile"
-                  component={require('../screens/main/EditProfileScreen').default}
-                  options={{ animation: 'default', contentStyle: { backgroundColor: COLORS.background } }}
-                />
-              )}
+      >
+        {isAuthenticated ? (
+          <Stack.Group>
+            {role === 'driver' && <Stack.Screen name="DriverMain" component={DriverTabNavigator} />}
+            {role === 'admin' && <Stack.Screen name="AdminMain" component={AdminTabNavigator} />}
+            {role === 'rider' && <Stack.Screen name="MainApp" component={MainTabNavigator} />}
+            {role === 'rider' && (
               <Stack.Screen
-                name="RouteDetail"
-                component={RouteDetailScreen}
-                options={{
-                  animation: "default",
-                  // native-stack uses contentStyle instead of cardStyle
-                  contentStyle: { backgroundColor: COLORS.background },
-                }}
+                name="EditProfile"
+                component={require('../screens/main/EditProfileScreen').default}
+                options={{ animation: 'default', contentStyle: { backgroundColor: COLORS.background } }}
               />
-              <Stack.Screen
-                name="PaymentCheckout"
-                component={PaymentCheckoutScreen}
-                options={{
-                  animation: "default",
-                  contentStyle: { backgroundColor: COLORS.background },
-                }}
-              />
-            </Stack.Group>
-          ) : (
-            <Stack.Group screenOptions={{ animation: "none" }}>
-              <Stack.Screen name="Auth" component={LoginScreen} />
-              <Stack.Screen name="Register" component={require("../screens/auth/RegisterScreen").default} />
-            </Stack.Group>
-          )}
-          </Stack.Navigator>
-        </NavigationContainer>
+            )}
+            <Stack.Screen
+              name="RouteDetail"
+              component={RouteDetailScreen}
+              options={{
+                animation: "default",
+                contentStyle: { backgroundColor: COLORS.background },
+              }}
+            />
+            <Stack.Screen
+              name="PaymentCheckout"
+              component={PaymentCheckoutScreen}
+              options={{
+                animation: "default",
+                contentStyle: { backgroundColor: COLORS.background },
+              }}
+            />
+          </Stack.Group>
+        ) : (
+          <Stack.Group screenOptions={{ animation: "none" }}>
+            <Stack.Screen name="Auth" component={LoginScreen} />
+            <Stack.Screen name="Register" component={require("../screens/auth/RegisterScreen").default} />
+          </Stack.Group>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  )
+}
+
+export function RootNavigator() {
+  return (
+    <AuthProvider>
+      <TicketsProvider>
+        <NavigationContent />
       </TicketsProvider>
-    </AuthContext.Provider>
+    </AuthProvider>
   )
 }
