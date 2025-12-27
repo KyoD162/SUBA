@@ -52,11 +52,15 @@ async function start() {
 
   const app = express();
   const server = http.createServer(app);
-  const io = new Server(server, { path: '/ws', cors: { origin: ORIGIN } });
+  
+  // En desarrollo, permitir todos los orígenes. En producción, usar ORIGIN específico
+  const corsOrigin = process.env.NODE_ENV === 'production' ? ORIGIN : '*';
+  
+  const io = new Server(server, { path: '/ws', cors: { origin: corsOrigin } });
 
   initSocket(io);
 
-  app.use(cors({ origin: ORIGIN }));
+  app.use(cors({ origin: corsOrigin }));
   app.use(helmet());
   app.use(express.json());
   app.use(morgan('dev'));
