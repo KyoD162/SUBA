@@ -18,7 +18,7 @@ export const generalLimiter = rateLimit({
  * Previene ataques de fuerza bruta en login/register
  */
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
+  windowMs: Number(process.env.RATE_LIMIT_AUTH_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
   max: Number(process.env.RATE_LIMIT_AUTH_MAX_REQUESTS) || 5, // 5 intentos por ventana
   message: 'Demasiados intentos de inicio de sesión. Por favor intenta de nuevo en 15 minutos.',
   skipSuccessfulRequests: false, // No skip successful requests
@@ -33,8 +33,8 @@ export const authLimiter = rateLimit({
  * Para endpoints como cambio de contraseña, actualización de perfil, etc.
  */
 export const sensitiveOperationLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hora
-  max: 10, // 10 requests por hora
+  windowMs: Number(process.env.RATE_LIMIT_SENSITIVE_WINDOW_MS) || 60 * 60 * 1000, // 1 hora
+  max: Number(process.env.RATE_LIMIT_SENSITIVE_MAX_REQUESTS) || 10, // 10 requests por hora
   message: 'Demasiadas operaciones sensibles. Por favor intenta de nuevo más tarde.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -45,8 +45,8 @@ export const sensitiveOperationLimiter = rateLimit({
  * Previene abuso del endpoint de refresh
  */
 export const refreshTokenLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 20, // 20 refreshes por ventana (más permisivo que auth)
+  windowMs: Number(process.env.RATE_LIMIT_REFRESH_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
+  max: Number(process.env.RATE_LIMIT_REFRESH_MAX_REQUESTS) || 20, // 20 refreshes por ventana
   message: 'Demasiadas solicitudes de refresh. Por favor intenta de nuevo más tarde.',
   standardHeaders: true,
   legacyHeaders: false,
