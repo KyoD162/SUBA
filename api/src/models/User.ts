@@ -10,6 +10,7 @@ export interface IUser {
   role: 'rider' | 'driver' | 'admin';
   comparePassword(candidate: string): Promise<boolean>;
   generateToken(): string;
+  generateRefreshToken(): string;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -36,8 +37,21 @@ UserSchema.methods.comparePassword = function (this: HydratedDocument<IUser>, ca
 
 UserSchema.methods.generateToken = function (this: HydratedDocument<IUser>) {
   const payload = { userId: this._id.toString(), role: this.role };
-  const secret = process.env.JWT_SECRET || '';
-  return jwt.sign(payload, secret, { expiresIn: '7d' });
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET is not defined in environment variables');
+  }
+  return jwt.sign(payload, secret, { expiresIn: (process.env.JWT_ACCESS_EXPIRATION || '15m') as any });
+};
+
+// Método para generar refresh token
+UserSchema.methods.generateRefreshToken = function (this: HydratedDocument<IUser>) {
+  const payload = { userId: this._id.toString(), role: this.role, type: 'refresh' };
+  const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
+  }
+  return jwt.sign(payload, secret, { expiresIn: (process.env.JWT_REFRESH_EXPIRATION || '7d') as any });
 };
 
 export const User = mongoose.model<IUser>('User', UserSchema);

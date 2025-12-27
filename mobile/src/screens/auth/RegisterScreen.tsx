@@ -8,10 +8,20 @@ import { COLORS, SPACING, RADIUS, TEXT_STYLES, globalStyles } from "../../theme"
 import { useAuth } from "../../navigation/AuthContext"
 import { useNavigation } from "@react-navigation/native"
 import { authService } from "../../services/auth"
+import { 
+  validateEmail, 
+  validatePassword, 
+  validatePasswordMatch, 
+  validateFullName, 
+  validatePhone, 
+  validateCedula, 
+  validateAge,
+  sanitizeInput 
+} from "../../utils/validation"
 
 export default function RegisterScreen() {
   const navigation = useNavigation()
-  const { signInUser } = useAuth()
+  const { signIn } = useAuth()
   const insets = useSafeAreaInsets()
 
   const [step, setStep] = useState(1)
@@ -33,10 +43,180 @@ export default function RegisterScreen() {
   const [docFront, setDocFront] = useState(false)
   const [docBack, setDocBack] = useState(false)
   const [docSelfie, setDocSelfie] = useState(false)
+  
+  // Estados de error para validación
+  const [errors, setErrors] = useState({
+    fullName: '',
+    cedula: '',
+    edad: '',
+    telefono: '',
+    email: '',
+    password: '',
+    confirmPassword:{
+      // Validar nombre completo
+      const nameValidation = validateFullName(fullName)
+      return nameValidation.isValid
+    }
+    if (step === 2) {
+      // Validar email y teléfono
+      const emailValidation = validateEmail(email)
+      const phoneValidation = validatePhone(telefono)
+      return emailValidation.isValid && phoneValidation.isValid
+    }
+    if (step === 3) {
+      // Validar contraseñas
+      const passwordValidation = validatePassword(password)
+      const matchValidation = validatePasswordMatch(password, confirmPassword)
+      return passwordValidation.isValid && matchValidation.isValid
+    }
+    if (step === 4) return docFront && docBack && docSelfie
+    return true
+  },// Validar antes de avanzar
+    if (!validateCurrentStep()) {
+      return
+    }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setStep((s) => Math.min(totalSteps, s + 1))
+  }
+  const prevStep = () => {
+    // Limpiar errores al retroceder
+    // Validación final
+    if (!validateCurrentStep()) {
+      return
+    }
+    
+    setLoading(true)
+    try {
+      const response = await authService.registerRider({
+        email: sanitizeInput(email.toLowerCase()),
+        password,
+        name: sanitizeInput(fullName),
+        phone: sanitizeInput(telefono),
+        specialDiscount
+      });
+      // response contains { token, refreshToken, user: { id, email, role, name } }
+      await signIn(response.token, response.refreshToken, response.user);
+    } catch (error: any) {
+      alert(error.message || 'Error al registrar');
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // Handlers para limpiar errores mientras se escribe
+  const handleFullNameChange = (text: string) => {
+    setFullName(text)
+    if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' }))
+  }
+  
+  const handleCedulaChange = (text: string) => {
+    setCedula(text)
+    if (errors.cedula) setErrors(prev => ({ ...prev, cedula: '' }))
+  }
+  
+  const handleEdadChange = (text: string) => {
+    setEdad(text)
+    if (errors.edad) setErrors(prev => ({ ...prev, edad: '' }))
+  }
+  
+  const handleTelefonoChange = (text: string) => {
+    setTelefono(text)
+    if (errors.telefono) setErrors(prev => ({ ...prev, telefono: '' }))
+  }
+  
+  const handleEmailChange = (text: string) => {
+    setEmail(text)
+    if (errors.email) setErrors(prev => ({ ...prev, email: '' }))
+  }
+  
+  const handlePasswordChange = (text: string) => {
+    setPassword(text)
+    if (errors.password) setErrors(prev => ({ ...prev, password: '' }))
+  }
+  
+  const handleConfirmPasswordChange = (text: string) => {
+    setConfirmPassword(text)
+    if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: '' })) if (!nameValidation.isValid) {
+        newErrors.fullName = nameValidation.error || ''
+        isValid = false
+      } else {
+        newErrors.fullName = ''
+      }
+      
+      // Validar cédula (opcional pero si tiene valor, validarlo)
+      if (cedula.trim()) {
+        const cedulaValidation = validateCedula(cedula)
+        if (!cedulaValidation.isValid) {
+          newErrors.cedula = cedulaValidation.error || ''
+          isValid = false
+        } else {
+          newErrors.cedula = ''
+        }
+      }
+      
+      // Validar edad (opcional pero si tiene valor, validarlo)
+      if (edad.trim()) {
+        const ageValidation = validateAge(edad)
+        if (!ageValidation.isValid) {
+          newErrors.edad = ageValidation.error || ''
+          isValid = false
+        } else {
+          newErrors.edad = ''
+        }
+      }
+    }
+    
+    if (step === 2) {
+      // Validar teléfono
+      const phoneValidation = validatePhone(telefono)
+      if (!phoneValidatihandleFullNameChange}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+      </Field>
+      {errors.fullName ? <Text style={styles.errorText}>{errors.fullName}</Text> : null}
+      
+      <Field label="Cédula" icon="id-card-outline">
+        <TextInput
+          style={styles.input}
+          placeholder="V-12345678"
+          placeholderTextColor={COLORS.textTertiary}
+          value={cedula}
+          onChangeText={handleCedulaChange}
+          autoCapitalize="characters"
+        />
+      </Field>
+      {errors.cedula ? <Text style={styles.errorText}>{errors.cedula}</Text> : null}
+      
+      <Field label="Edad" icon="calendar-outline">
+        <TextInput
+          style={styles.input}
+          placeholder="Ej: 26"
+          placeholderTextColor={COLORS.textTertiary}
+          keyboardType="number-pad"
+          value={edad}
+          onChangeText={handleEdadChange}
+        />
+      </Field>
+      {errors.edad ? <Text style={styles.errorText}>{errors.edad}</Text> : null}ors.password = passwordValidation.error || ''
+        isValid = false
+      } else {
+        newErrors.password = ''
+      }
+      
+      // Validar coincidencia
+      const matchValidation = validatePasswordMatch(password, confirmPassword)
+      if (!matchValidation.isValid) {
+        newErrors.confirmPassword = matchValidation.error || ''
+        isValid = false
+      } else {
+        newErrors.confirmPassword = ''
+      }
+    }
 
-  const totalSteps = 4
-  // Enable smooth layout animations on Android
-  if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+    setErrors(newErrors)
+    return isValid
+  }
     UIManager.setLayoutAnimationEnabledExperimental(true)
   }
 
@@ -61,14 +241,15 @@ export default function RegisterScreen() {
   const submit = async () => {
     setLoading(true)
     try {
-      await authService.registerRider({
+      const response = await authService.registerRider({
         email,
         password,
         name: fullName,
         phone: telefono,
         specialDiscount
       });
-      signInUser();
+      // response contains { token, refreshToken, user: { id, email, role, name } }
+      await signIn(response.token, response.refreshToken, response.user);
     } catch (error: any) {
       alert(error.message || 'Error al registrar');
     } finally {
@@ -142,20 +323,24 @@ export default function RegisterScreen() {
     <View>
       <Text style={styles.sectionTitle}>Datos personales</Text>
       <Field label="Nombre completo" icon="person-outline">
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: Jesus Rondon"
-          placeholderTextColor={COLORS.textTertiary}
-          value={fullName}
-          onChangeText={setFullName}
+        <TextInputhandleTelefonoChange}
         />
       </Field>
-      <Field label="Cédula" icon="id-card-outline">
+      {errors.telefono ? <Text style={styles.errorText}>{errors.telefono}</Text> : null}
+      
+      <Field label="Correo electrónico" icon="mail-outline">
         <TextInput
           style={styles.input}
-          placeholder="V-12345678"
+          placeholder="tu@email.com"
           placeholderTextColor={COLORS.textTertiary}
-          value={cedula}
+          keyboardType="email-address"
+          value={email}
+          onChangeText={handleEmailChange}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+      </Field>
+      {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}e={cedula}
           onChangeText={setCedula}
         />
       </Field>
@@ -165,27 +350,33 @@ export default function RegisterScreen() {
           placeholder="Ej: 26"
           placeholderTextColor={COLORS.textTertiary}
           keyboardType="number-pad"
-          value={edad}
-          onChangeText={setEdad}
+          value={edad}handlePasswordChange}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
+        <TouchableOpacity onPress={() => setShowPassword((s) => !s)}>
+          <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={COLORS.textTertiary} />
+        </TouchableOpacity>
       </Field>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Descuento Especial</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {[
-            { label: 'Ninguno', value: 'none' },
-            { label: 'Estudiante', value: 'student' },
-            { label: 'Discapacitado', value: 'disabled' },
-            { label: 'Tercera Edad', value: 'senior' },
-          ].map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[
-                styles.input, 
-                { flex: 0, minWidth: '45%', justifyContent: 'center', alignItems: 'center', backgroundColor: specialDiscount === opt.value ? COLORS.primary : COLORS.surface }
-              ]}
-              onPress={() => setSpecialDiscount(opt.value as any)}
+      {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+      
+      <Field label="Confirmar contraseña" icon="lock-closed-outline">
+        <TextInput
+          style={[styles.input, { flex: 1 }]}
+          placeholder="Repite tu contraseña"
+          placeholderTextColor={COLORS.textTertiary}
+          secureTextEntry={!showConfirmPassword}
+          value={confirmPassword}
+          onChangeText={handleConfirmPasswordChange}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <TouchableOpacity onPress={() => setShowConfirmPassword((s) => !s)}>
+          <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color={COLORS.textTertiary} />
+        </TouchableOpacity>
+      </Field>
+      {errors.confirmPassword ? <Text style={styles.errorText}>{errors.confirmPassword}</Text> : null}
+      onPress={() => setSpecialDiscount(opt.value as any)}
             >
               <Text style={{ color: specialDiscount === opt.value ? COLORS.textInverse : COLORS.text }}>{opt.label}</Text>
             </TouchableOpacity>
@@ -454,6 +645,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 10,
+  errorText: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.error,
+    marginTop: SPACING.xs,
+    marginLeft: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
     elevation: 6,
   },
   heroTitle: {

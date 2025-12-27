@@ -7,6 +7,7 @@ export const COLORS = {
   success: "#9DD98C",
   warning: "#FFA500",
   danger: "#FF6B6B",
+  error: "#DC3545", // Color para mensajes de error de validación
 
   // Neutrals
   background: "#F3F3F3",
