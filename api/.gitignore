@@ -1,0 +1,21 @@
+# Environment variables - DO NOT commit these files
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# Testing
+coverage/
+
+# Misc
+.DS_Store
+*.pem
