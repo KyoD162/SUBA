@@ -89,18 +89,19 @@ Content-Type: application/json
 }
 ```
 
-### Login
+### Login (Unificado)
 
 ```http
-POST /api/auth/login/rider
-POST /api/auth/login/driver
-POST /api/auth/login/admin
+POST /api/auth/login
 Content-Type: application/json
 
 {
   "email": "usuario@example.com",
   "password": "password123"
 }
+```
+
+> **Nota:** El backend detecta automáticamente el rol del usuario (rider, driver, admin) basándose en el tipo de cuenta registrada.
 ```
 
 **Respuesta:** Igual que el registro
@@ -215,8 +216,8 @@ curl -X POST http://localhost:4000/api/auth/register/rider \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"test123","name":"Test User","phone":"04141234567"}'
 
-# Login
-curl -X POST http://localhost:4000/api/auth/login/rider \
+# Login (unificado)
+curl -X POST http://localhost:4000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"test123"}'
 

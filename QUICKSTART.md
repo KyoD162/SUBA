@@ -117,8 +117,8 @@ curl -X POST http://localhost:4000/api/auth/register/rider \
     "phone": "04121234567"
   }'
 
-# Login
-curl -X POST http://localhost:4000/api/auth/login/rider \
+# Login (unificado - detecta rol automáticamente)
+curl -X POST http://localhost:4000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
