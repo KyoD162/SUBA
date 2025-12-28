@@ -1,11 +1,49 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-// Replace with your machine's IP address if running on physical device
-const DEV_API_URL = 'http://192.168.1.104:4000/api'; 
-const PROD_API_URL = 'https://api.suba.com/api';
+// Puerto del backend API
+const API_PORT = 4000;
 
-export const API_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
+/**
+ * Obtiene la URL del API de forma DINÁMICA
+ * 
+ * En desarrollo: Usa automáticamente la IP del servidor Expo (funciona en cualquier dispositivo/red)
+ * En producción: Usa la URL de producción configurada
+ * 
+ * NO necesitas configurar nada manualmente - funciona automáticamente para todo el equipo
+ */
+const getApiUrl = (): string => {
+  // 1. Variable de entorno tiene prioridad (para casos especiales o producción)
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl) {
+    console.log('[API] Usando URL de variable de entorno:', envUrl);
+    return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+  }
+  
+  // 2. En desarrollo: Obtener IP automáticamente del servidor Expo
+  if (__DEV__) {
+    // Constants.expoConfig?.hostUri contiene "IP:PUERTO" del servidor Expo
+    // Ejemplo: "192.168.1.108:8081"
+    const hostUri = Constants.expoConfig?.hostUri;
+    
+    if (hostUri) {
+      // Extraer solo la IP (sin el puerto de Expo)
+      const host = hostUri.split(':')[0];
+      const apiUrl = `http://${host}:${API_PORT}/api`;
+      console.log('[API] URL dinámica detectada:', apiUrl);
+      return apiUrl;
+    }
+    
+    // Fallback si no hay hostUri (raro, pero por si acaso)
+    console.warn('[API] No se pudo detectar IP. Usando localhost');
+    return `http://localhost:${API_PORT}/api`;
+  }
+  
+  // 3. Producción
+  return 'https://api.suba.com/api';
+};
+
+export const API_URL = getApiUrl();
 
 // Helper para hacer fetch con auto-refresh de token
 export async function apiFetch(url: string, options: RequestInit = {}) {
