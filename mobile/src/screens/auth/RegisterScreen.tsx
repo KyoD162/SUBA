@@ -19,6 +19,13 @@ import {
   sanitizeInput 
 } from "../../utils/validation"
 
+const totalSteps = 4
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true)
+}
+
 export default function RegisterScreen() {
   const navigation = useNavigation()
   const { signIn } = useAuth()
@@ -52,34 +59,125 @@ export default function RegisterScreen() {
     telefono: '',
     email: '',
     password: '',
-    confirmPassword:{
+    confirmPassword: ''
+  })
+
+  // Validación del paso actual con feedback visual
+  const validateCurrentStep = (): boolean => {
+    let isValid = true
+    const newErrors = { ...errors }
+
+    if (step === 1) {
       // Validar nombre completo
       const nameValidation = validateFullName(fullName)
-      return nameValidation.isValid
+      if (!nameValidation.isValid) {
+        newErrors.fullName = nameValidation.error || ''
+        isValid = false
+      } else {
+        newErrors.fullName = ''
+      }
+      
+      // Validar cédula (opcional pero si tiene valor, validarlo)
+      if (cedula.trim()) {
+        const cedulaValidation = validateCedula(cedula)
+        if (!cedulaValidation.isValid) {
+          newErrors.cedula = cedulaValidation.error || ''
+          isValid = false
+        } else {
+          newErrors.cedula = ''
+        }
+      }
+      
+      // Validar edad (opcional pero si tiene valor, validarlo)
+      if (edad.trim()) {
+        const ageValidation = validateAge(edad)
+        if (!ageValidation.isValid) {
+          newErrors.edad = ageValidation.error || ''
+          isValid = false
+        } else {
+          newErrors.edad = ''
+        }
+      }
     }
+    
     if (step === 2) {
-      // Validar email y teléfono
-      const emailValidation = validateEmail(email)
+      // Validar teléfono
       const phoneValidation = validatePhone(telefono)
-      return emailValidation.isValid && phoneValidation.isValid
+      if (!phoneValidation.isValid) {
+        newErrors.telefono = phoneValidation.error || ''
+        isValid = false
+      } else {
+        newErrors.telefono = ''
+      }
+      
+      // Validar email
+      const emailValidation = validateEmail(email)
+      if (!emailValidation.isValid) {
+        newErrors.email = emailValidation.error || ''
+        isValid = false
+      } else {
+        newErrors.email = ''
+      }
     }
+    
     if (step === 3) {
-      // Validar contraseñas
+      // Validar contraseña
       const passwordValidation = validatePassword(password)
+      if (!passwordValidation.isValid) {
+        newErrors.password = passwordValidation.error || ''
+        isValid = false
+      } else {
+        newErrors.password = ''
+      }
+      
+      // Validar coincidencia
       const matchValidation = validatePasswordMatch(password, confirmPassword)
-      return passwordValidation.isValid && matchValidation.isValid
+      if (!matchValidation.isValid) {
+        newErrors.confirmPassword = matchValidation.error || ''
+        isValid = false
+      } else {
+        newErrors.confirmPassword = ''
+      }
     }
+
+    setErrors(newErrors)
+    return isValid
+  }
+
+  // Validaciones suavizadas para no bloquear el avance entre pasos (MVP)
+  const canNext = useMemo(() => {
+    if (step === 1) return fullName.trim().length > 2 // cédula/edad opcional por ahora
+    if (step === 2) return email.includes("@") // teléfono opcional por ahora
+    if (step === 3) return password.length >= 6 && password === confirmPassword
     if (step === 4) return docFront && docBack && docSelfie
     return true
-  },// Validar antes de avanzar
+  }, [step, fullName, email, password, confirmPassword, docFront, docBack, docSelfie])
+
+  const nextStep = () => {
+    // Validar antes de avanzar
     if (!validateCurrentStep()) {
       return
     }
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setStep((s) => Math.min(totalSteps, s + 1))
   }
+
   const prevStep = () => {
     // Limpiar errores al retroceder
+    setErrors({
+      fullName: '',
+      cedula: '',
+      edad: '',
+      telefono: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    })
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setStep((s) => Math.max(1, s - 1))
+  }
+
+  const submit = async () => {
     // Validación final
     if (!validateCurrentStep()) {
       return
@@ -136,125 +234,7 @@ export default function RegisterScreen() {
   
   const handleConfirmPasswordChange = (text: string) => {
     setConfirmPassword(text)
-    if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: '' })) if (!nameValidation.isValid) {
-        newErrors.fullName = nameValidation.error || ''
-        isValid = false
-      } else {
-        newErrors.fullName = ''
-      }
-      
-      // Validar cédula (opcional pero si tiene valor, validarlo)
-      if (cedula.trim()) {
-        const cedulaValidation = validateCedula(cedula)
-        if (!cedulaValidation.isValid) {
-          newErrors.cedula = cedulaValidation.error || ''
-          isValid = false
-        } else {
-          newErrors.cedula = ''
-        }
-      }
-      
-      // Validar edad (opcional pero si tiene valor, validarlo)
-      if (edad.trim()) {
-        const ageValidation = validateAge(edad)
-        if (!ageValidation.isValid) {
-          newErrors.edad = ageValidation.error || ''
-          isValid = false
-        } else {
-          newErrors.edad = ''
-        }
-      }
-    }
-    
-    if (step === 2) {
-      // Validar teléfono
-      const phoneValidation = validatePhone(telefono)
-      if (!phoneValidatihandleFullNameChange}
-          autoCapitalize="words"
-          autoCorrect={false}
-        />
-      </Field>
-      {errors.fullName ? <Text style={styles.errorText}>{errors.fullName}</Text> : null}
-      
-      <Field label="Cédula" icon="id-card-outline">
-        <TextInput
-          style={styles.input}
-          placeholder="V-12345678"
-          placeholderTextColor={COLORS.textTertiary}
-          value={cedula}
-          onChangeText={handleCedulaChange}
-          autoCapitalize="characters"
-        />
-      </Field>
-      {errors.cedula ? <Text style={styles.errorText}>{errors.cedula}</Text> : null}
-      
-      <Field label="Edad" icon="calendar-outline">
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: 26"
-          placeholderTextColor={COLORS.textTertiary}
-          keyboardType="number-pad"
-          value={edad}
-          onChangeText={handleEdadChange}
-        />
-      </Field>
-      {errors.edad ? <Text style={styles.errorText}>{errors.edad}</Text> : null}ors.password = passwordValidation.error || ''
-        isValid = false
-      } else {
-        newErrors.password = ''
-      }
-      
-      // Validar coincidencia
-      const matchValidation = validatePasswordMatch(password, confirmPassword)
-      if (!matchValidation.isValid) {
-        newErrors.confirmPassword = matchValidation.error || ''
-        isValid = false
-      } else {
-        newErrors.confirmPassword = ''
-      }
-    }
-
-    setErrors(newErrors)
-    return isValid
-  }
-    UIManager.setLayoutAnimationEnabledExperimental(true)
-  }
-
-  // Validaciones suavizadas para no bloquear el avance entre pasos (MVP)
-  const canNext = useMemo(() => {
-    if (step === 1) return fullName.trim().length > 2 // cédula/edad opcional por ahora
-    if (step === 2) return email.includes("@") // teléfono opcional por ahora
-    if (step === 3) return password.length >= 6 && password === confirmPassword
-    if (step === 4) return docFront && docBack && docSelfie
-    return true
-  }, [step, fullName, email, password, confirmPassword, docFront, docBack, docSelfie])
-
-  const nextStep = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    setStep((s) => Math.min(totalSteps, s + 1))
-  }
-  const prevStep = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    setStep((s) => Math.max(1, s - 1))
-  }
-
-  const submit = async () => {
-    setLoading(true)
-    try {
-      const response = await authService.registerRider({
-        email,
-        password,
-        name: fullName,
-        phone: telefono,
-        specialDiscount
-      });
-      // response contains { token, refreshToken, user: { id, email, role, name } }
-      await signIn(response.token, response.refreshToken, response.user);
-    } catch (error: any) {
-      alert(error.message || 'Error al registrar');
-    } finally {
-      setLoading(false)
-    }
+    if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: '' }))
   }
 
   const progressAnim = useRef(new Animated.Value(1 / totalSteps)).current
@@ -319,11 +299,84 @@ export default function RegisterScreen() {
     </View>
   )
 
+  const discountOptions = [
+    { value: 'none', label: 'Ninguno' },
+    { value: 'student', label: 'Estudiante' },
+    { value: 'disabled', label: 'Discapacitado' },
+    { value: 'senior', label: 'Adulto Mayor' },
+  ]
+
   const Step1 = () => (
     <View>
       <Text style={styles.sectionTitle}>Datos personales</Text>
       <Field label="Nombre completo" icon="person-outline">
-        <TextInputhandleTelefonoChange}
+        <TextInput
+          style={styles.input}
+          placeholder="Tu nombre y apellido"
+          placeholderTextColor={COLORS.textTertiary}
+          value={fullName}
+          onChangeText={handleFullNameChange}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+      </Field>
+      {errors.fullName ? <Text style={styles.errorText}>{errors.fullName}</Text> : null}
+      
+      <Field label="Cédula" icon="id-card-outline">
+        <TextInput
+          style={styles.input}
+          placeholder="V-12345678"
+          placeholderTextColor={COLORS.textTertiary}
+          value={cedula}
+          onChangeText={handleCedulaChange}
+          autoCapitalize="characters"
+        />
+      </Field>
+      {errors.cedula ? <Text style={styles.errorText}>{errors.cedula}</Text> : null}
+      
+      <Field label="Edad" icon="calendar-outline">
+        <TextInput
+          style={styles.input}
+          placeholder="Ej: 26"
+          placeholderTextColor={COLORS.textTertiary}
+          keyboardType="number-pad"
+          value={edad}
+          onChangeText={handleEdadChange}
+        />
+      </Field>
+      {errors.edad ? <Text style={styles.errorText}>{errors.edad}</Text> : null}
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Descuento especial</Text>
+        <View style={styles.discountOptionsRow}>
+          {discountOptions.map((opt) => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[
+                styles.discountOption,
+                specialDiscount === opt.value && styles.discountOptionActive
+              ]}
+              onPress={() => setSpecialDiscount(opt.value as any)}
+            >
+              <Text style={{ color: specialDiscount === opt.value ? COLORS.textInverse : COLORS.text }}>{opt.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </View>
+  )
+
+  const Step2 = () => (
+    <View>
+      <Text style={styles.sectionTitle}>Contacto</Text>
+      <Field label="Teléfono" icon="call-outline">
+        <TextInput
+          style={styles.input}
+          placeholder="Ej: +58 412 000 0000"
+          placeholderTextColor={COLORS.textTertiary}
+          keyboardType="phone-pad"
+          value={telefono}
+          onChangeText={handleTelefonoChange}
         />
       </Field>
       {errors.telefono ? <Text style={styles.errorText}>{errors.telefono}</Text> : null}
@@ -340,17 +393,21 @@ export default function RegisterScreen() {
           autoCorrect={false}
         />
       </Field>
-      {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}e={cedula}
-          onChangeText={setCedula}
-        />
-      </Field>
-      <Field label="Edad" icon="calendar-outline">
+      {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+    </View>
+  )
+
+  const Step3 = () => (
+    <View>
+      <Text style={styles.sectionTitle}>Seguridad</Text>
+      <Field label="Contraseña" icon="lock-closed-outline">
         <TextInput
-          style={styles.input}
-          placeholder="Ej: 26"
+          style={[styles.input, { flex: 1 }]}
+          placeholder="Mínimo 6 caracteres"
           placeholderTextColor={COLORS.textTertiary}
-          keyboardType="number-pad"
-          value={edad}handlePasswordChange}
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={handlePasswordChange}
           autoCapitalize="none"
           autoCorrect={false}
         />
@@ -376,74 +433,7 @@ export default function RegisterScreen() {
         </TouchableOpacity>
       </Field>
       {errors.confirmPassword ? <Text style={styles.errorText}>{errors.confirmPassword}</Text> : null}
-      onPress={() => setSpecialDiscount(opt.value as any)}
-            >
-              <Text style={{ color: specialDiscount === opt.value ? COLORS.textInverse : COLORS.text }}>{opt.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    </View>
-  )
-
-  const Step2 = () => (
-    <View>
-      <Text style={styles.sectionTitle}>Contacto</Text>
-      <Field label="Teléfono" icon="call-outline">
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: +58 412 000 0000"
-          placeholderTextColor={COLORS.textTertiary}
-          keyboardType="phone-pad"
-          value={telefono}
-          onChangeText={setTelefono}
-        />
-      </Field>
-      <Field label="Correo electrónico" icon="mail-outline">
-        <TextInput
-          style={styles.input}
-          placeholder="tu@email.com"
-          placeholderTextColor={COLORS.textTertiary}
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-        />
-      </Field>
-    </View>
-  )
-
-  const Step3 = () => (
-    <View>
-      <Text style={styles.sectionTitle}>Seguridad</Text>
-      <Field label="Contraseña" icon="lock-closed-outline">
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="Mínimo 6 caracteres"
-          placeholderTextColor={COLORS.textTertiary}
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
-          autoCapitalize="none"
-        />
-        <TouchableOpacity onPress={() => setShowPassword((s) => !s)}>
-          <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={COLORS.textTertiary} />
-        </TouchableOpacity>
-      </Field>
-      <Field label="Confirmar contraseña" icon="lock-closed-outline">
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="Repite tu contraseña"
-          placeholderTextColor={COLORS.textTertiary}
-          secureTextEntry={!showConfirmPassword}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          autoCapitalize="none"
-        />
-        <TouchableOpacity onPress={() => setShowConfirmPassword((s) => !s)}>
-          <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color={COLORS.textTertiary} />
-        </TouchableOpacity>
-      </Field>
+      
       <View style={styles.passwordHintRow}>
         <Ionicons name="information-circle-outline" size={16} color={COLORS.textTertiary} />
         <Text style={styles.passwordHint}>Usa al menos 6 caracteres. Mezcla letras y números para mayor seguridad.</Text>
@@ -645,13 +635,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 10,
-  errorText: {
-    ...TEXT_STYLES.caption,
-    color: COLORS.error,
-    marginTop: SPACING.xs,
-    marginLeft: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
     elevation: 6,
   },
   heroTitle: {
@@ -714,6 +697,30 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     ...TEXT_STYLES.body,
     color: COLORS.text,
+  },
+  errorText: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.error,
+    marginTop: SPACING.xs,
+    marginLeft: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  discountOptionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: SPACING.sm,
+  },
+  discountOption: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  discountOptionActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   passwordHintRow: {
     flexDirection: "row",
@@ -797,7 +804,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
-    // Barra inferior más sutil y acorde al fondo
     backgroundColor: COLORS.background,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
