@@ -26,6 +26,7 @@ export type RootStackParamList = {
   PaymentCheckout: { packageId: string }
   Register: undefined
   EditProfile: undefined
+  LiveTracking: { routeId: string }
 }
 
 export type MainTabParamList = {

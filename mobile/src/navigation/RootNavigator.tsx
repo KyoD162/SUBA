@@ -10,6 +10,7 @@ import type { RootStackParamList, MainTabParamList, DriverTabParamList, AdminTab
 import { COLORS, SPACING } from "../theme"
 import { AuthProvider, useAuth } from "./AuthContext"
 import { TicketsProvider } from "./TicketsContext"
+import { TripProvider } from "./TripContext"
 
 // Auth screens
 import LoginScreen from "../screens/auth/LoginScreen"
@@ -19,7 +20,7 @@ import HomeScreen from "../screens/main/HomeScreen"
 import RoutesScreen from "../screens/main/RoutesMapScreen"
 import TicketsScreen from "../screens/main/TicketsScreen"
 import ProfileScreen from "../screens/main/ProfileScreen"
-// AdminPanel eliminado
+import LiveTrackingScreen from "../screens/main/LiveTrackingScreen"
 
 // Detail screens
 import RouteDetailScreen from "../screens/details/RouteDetailScreen"
@@ -203,6 +204,14 @@ function NavigationContent() {
               }}
             />
             <Stack.Screen
+              name="LiveTracking"
+              component={LiveTrackingScreen}
+              options={{
+                animation: "default",
+                contentStyle: { backgroundColor: COLORS.background },
+              }}
+            />
+            <Stack.Screen
               name="PaymentCheckout"
               component={PaymentCheckoutScreen}
               options={{
@@ -225,9 +234,11 @@ function NavigationContent() {
 export function RootNavigator() {
   return (
     <AuthProvider>
-      <TicketsProvider>
-        <NavigationContent />
-      </TicketsProvider>
+      <TripProvider>
+        <TicketsProvider>
+          <NavigationContent />
+        </TicketsProvider>
+      </TripProvider>
     </AuthProvider>
   )
 }
