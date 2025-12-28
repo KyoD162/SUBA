@@ -14,36 +14,55 @@ import {
 // --- REGISTER ---
 
 export async function registerRider(req: Request, res: Response) {
-  const { email, password, name, phone, specialDiscount } = req.body;
+  console.log('[REGISTER] Iniciando registro de rider...');
+  console.log('[REGISTER] Body recibido:', JSON.stringify(req.body, null, 2));
   
-  // Validar datos de entrada
-  const validationErrors = validateRiderRegistration(req.body);
-  if (validationErrors.length > 0) {
-    return res.status(400).json({ 
-      error: 'Datos inválidos', 
-      details: validationErrors 
-    });
-  }
-  
-  const existing = await User.findOne({ email: email.toLowerCase().trim() });
-  if (existing) return res.status(409).json({ error: 'Email in use' });
+  try {
+    const { email, password, name, phone, specialDiscount } = req.body;
+    
+    // Validar datos de entrada
+    console.log('[REGISTER] Validando datos...');
+    const validationErrors = validateRiderRegistration(req.body);
+    if (validationErrors.length > 0) {
+      console.log('[REGISTER] Errores de validación:', validationErrors);
+      return res.status(400).json({ 
+        error: 'Datos inválidos', 
+        details: validationErrors 
+      });
+    }
+    
+    console.log('[REGISTER] Buscando email existente:', email.toLowerCase().trim());
+    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existing) {
+      console.log('[REGISTER] Email ya existe');
+      return res.status(409).json({ error: 'Email in use' });
+    }
 
-  const user = await Rider.create({ 
-    email: sanitizeString(email.toLowerCase()), 
-    password, 
-    name: name ? sanitizeString(name) : undefined, 
-    phone: phone ? sanitizeString(phone) : undefined,
-    specialDiscount: specialDiscount || 'none',
-    role: 'rider' 
-  });
-  
-  const token = user.generateToken();
-  const refreshToken = user.generateRefreshToken();
-  return res.status(201).json({ 
-    token, 
-    refreshToken,
-    user: { id: user.id, email: user.email, role: user.role, name: user.name } 
-  });
+    console.log('[REGISTER] Creando usuario...');
+    const user = await Rider.create({ 
+      email: sanitizeString(email.toLowerCase()), 
+      password, 
+      name: name ? sanitizeString(name) : undefined, 
+      phone: phone ? sanitizeString(phone) : undefined,
+      specialDiscount: specialDiscount || 'none',
+      role: 'rider' 
+    });
+    
+    console.log('[REGISTER] Usuario creado con ID:', user.id);
+    const token = user.generateToken();
+    const refreshToken = user.generateRefreshToken();
+    
+    console.log('[REGISTER] Tokens generados, enviando respuesta...');
+    return res.status(201).json({ 
+      token, 
+      refreshToken,
+      user: { id: user.id, email: user.email, role: user.role, name: user.name } 
+    });
+  } catch (error: any) {
+    console.error('[REGISTER] Error:', error.message);
+    console.error('[REGISTER] Stack:', error.stack);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
 }
 
 export async function registerDriver(req: Request, res: Response) {

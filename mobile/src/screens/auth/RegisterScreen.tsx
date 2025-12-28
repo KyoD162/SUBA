@@ -178,25 +178,39 @@ export default function RegisterScreen() {
   }
 
   const submit = async () => {
+    console.log('[REGISTER SCREEN] Iniciando submit...');
+    
     // Validación final
     if (!validateCurrentStep()) {
+      console.log('[REGISTER SCREEN] Validación fallida');
       return
     }
     
+    const registrationData = {
+      email: sanitizeInput(email.toLowerCase()),
+      password,
+      name: sanitizeInput(fullName),
+      phone: sanitizeInput(telefono),
+      specialDiscount
+    };
+    
+    console.log('[REGISTER SCREEN] Datos a enviar:', JSON.stringify(registrationData, null, 2));
+    
     setLoading(true)
     try {
-      const response = await authService.registerRider({
-        email: sanitizeInput(email.toLowerCase()),
-        password,
-        name: sanitizeInput(fullName),
-        phone: sanitizeInput(telefono),
-        specialDiscount
-      });
+      console.log('[REGISTER SCREEN] Llamando a authService.registerRider...');
+      const response = await authService.registerRider(registrationData);
+      console.log('[REGISTER SCREEN] Respuesta recibida:', JSON.stringify(response, null, 2));
+      
       // response contains { token, refreshToken, user: { id, email, role, name } }
+      console.log('[REGISTER SCREEN] Llamando a signIn...');
       await signIn(response.token, response.refreshToken, response.user);
+      console.log('[REGISTER SCREEN] signIn completado!');
     } catch (error: any) {
+      console.error('[REGISTER SCREEN] Error:', error.message);
       alert(error.message || 'Error al registrar');
     } finally {
+      console.log('[REGISTER SCREEN] Finalizando, setLoading(false)');
       setLoading(false)
     }
   }
