@@ -118,49 +118,57 @@ export async function registerAdmin(req: Request, res: Response) {
 
 // --- LOGIN ---
 
+// Login unificado - detecta el rol automáticamente
+export async function login(req: Request, res: Response) {
+  try {
+    const { email, password } = req.body;
+    
+    // Validar datos de entrada
+    const validationErrors = validateLoginData(req.body);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ 
+        error: 'Datos inválidos', 
+        details: validationErrors 
+      });
+    }
+    
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+
+    const ok = await user.comparePassword(password);
+    if (!ok) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+    
+    const token = user.generateToken();
+    const refreshToken = user.generateRefreshToken();
+    
+    // El rol se devuelve automáticamente desde el modelo
+    return res.json({ 
+      token, 
+      refreshToken,
+      user: { id: user.id, email: user.email, role: user.role, name: user.name } 
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+// Mantener endpoints por rol para compatibilidad (opcional)
 export async function loginRider(req: Request, res: Response) {
-  return loginGeneric(req, res, 'rider');
+  return login(req, res);
 }
 
 export async function loginDriver(req: Request, res: Response) {
-  return loginGeneric(req, res, 'driver');
+  return login(req, res);
 }
 
 export async function loginAdmin(req: Request, res: Response) {
-  return loginGeneric(req, res, 'admin');
-}
-
-async function loginGeneric(req: Request, res: Response, expectedRole: string) {
-  const { email, password } = req.body;
-  
-  // Validar datos de entrada
-  const validationErrors = validateLoginData(req.body);
-  if (validationErrors.length > 0) {
-    return res.status(400).json({ 
-      error: 'Datos inválidos', 
-      details: validationErrors 
-    });
-  }
-  
-  const user = await User.findOne({ email: email.toLowerCase().trim() });
-  
-  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-  
-  // Check role matches endpoint
-  if (user.role !== expectedRole) {
-    return res.status(403).json({ error: `Access denied. Not a ${expectedRole} account.` });
-  }
-
-  const ok = await user.comparePassword(password);
-  if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-  
-  const token = user.generateToken();
-  const refreshToken = user.generateRefreshToken();
-  return res.json({ 
-    token, 
-    refreshToken,
-    user: { id: user.id, email: user.email, role: user.role, name: user.name } 
-  });
+  return login(req, res);
 }
 
 export async function profile(req: Request, res: Response) {

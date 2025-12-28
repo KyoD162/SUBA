@@ -18,8 +18,9 @@ export const authService = {
     return json;
   },
 
-  async login(data: { email: string; password: string; role: 'rider' | 'driver' | 'admin' }) {
-    const response = await fetch(`${API_URL}/auth/login/${data.role}`, {
+  // Login unificado - el backend detecta el rol automáticamente
+  async login(data: { email: string; password: string }) {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: data.email, password: data.password }),

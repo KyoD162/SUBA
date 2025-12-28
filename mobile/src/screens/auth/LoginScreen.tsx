@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
@@ -17,7 +17,6 @@ export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState<'rider' | 'driver' | 'admin'>('rider')
   const [userLoading, setUserLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   
@@ -50,7 +49,8 @@ export default function LoginScreen() {
     try {
       // Sanitizar inputs antes de enviar
       const sanitizedEmail = sanitizeInput(email.toLowerCase())
-      const response = await authService.login({ email: sanitizedEmail, password, role });
+      // El backend detecta automáticamente el rol del usuario
+      const response = await authService.login({ email: sanitizedEmail, password });
       // response contains { token, refreshToken, user: { id, email, role, name } }
       await signIn(response.token, response.refreshToken, response.user);
     } catch (error: any) {
@@ -64,7 +64,6 @@ export default function LoginScreen() {
   const handleEmailChange = (text: string) => {
     setEmail(text)
     if (emailError) {
-      // Limpiar error si el usuario está escribiendo
       setEmailError("")
     }
   }
@@ -83,7 +82,7 @@ export default function LoginScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Ionicons name="bus-outline" size={48} color={COLORS.success} />
+            <Ionicons name="bus-outline" size={48} color={COLORS.textInverse} />
           </View>
           <Text style={styles.title}>SUBA</Text>
           <Text style={styles.subtitle}>Tu transporte público inteligente</Text>
@@ -91,21 +90,6 @@ export default function LoginScreen() {
 
         {/* Form */}
         <View style={styles.form}>
-          {/* Role Selector */}
-          <View style={styles.roleSelector}>
-            {(['rider', 'driver', 'admin'] as const).map((r) => (
-              <TouchableOpacity
-                key={r}
-                style={[styles.roleButton, role === r && styles.roleButtonActive]}
-                onPress={() => setRole(r)}
-              >
-                <Text style={[styles.roleButtonText, role === r && styles.roleButtonTextActive]}>
-                  {r === 'rider' ? 'Usuario' : r === 'driver' ? 'Conductor' : 'Admin'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
           {/* Email Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Correo electrónico</Text>
@@ -126,7 +110,10 @@ export default function LoginScreen() {
             {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
           </View>
 
-          {/* Password In[styles.inputContainer, passwordError && styles.inputContainerError]}>
+          {/* Password Input */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Contraseña</Text>
+            <View style={[styles.inputContainer, passwordError && styles.inputContainerError]}>
               <Ionicons name="lock-closed-outline" size={20} color={passwordError ? COLORS.error : COLORS.textTertiary} />
               <TextInput
                 style={[styles.input, { flex: 1 }]}
@@ -147,10 +134,7 @@ export default function LoginScreen() {
                 />
               </TouchableOpacity>
             </View>
-            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}olor={COLORS.textTertiary}
-                />
-              </TouchableOpacity>
-            </View>
+            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
           </View>
 
           {/* Forgot Password */}
@@ -203,9 +187,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.success,
+    backgroundColor: COLORS.primary,
     ...globalStyles.centered,
     marginBottom: SPACING.lg,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   title: {
     ...TEXT_STYLES.h1,
@@ -218,32 +207,6 @@ const styles = StyleSheet.create({
   },
   form: {
     marginTop: SPACING.xl,
-  },
-  roleSelector: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    padding: 4,
-    marginBottom: SPACING.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  roleButton: {
-    flex: 1,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
-    borderRadius: RADIUS.md,
-  },
-  roleButtonActive: {
-    backgroundColor: COLORS.primary,
-  },
-  roleButtonText: {
-    ...TEXT_STYLES.caption,
-    color: COLORS.textSecondary,
-    fontWeight: '600',
-  },
-  roleButtonTextActive: {
-    color: COLORS.textInverse,
   },
   inputGroup: {
     marginBottom: SPACING.xl,
@@ -261,24 +224,24 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     paddingHorizontal: SPACING.md,
     borderWidth: 1,
-    borContainerError: {
+    borderColor: COLORS.border,
+    gap: SPACING.md,
+  },
+  inputContainerError: {
     borderColor: COLORS.error,
     borderWidth: 1.5,
-  },
-  errorText: {
-    ...TEXT_STYLES.caption,
-    color: COLORS.error,
-    marginTop: SPACING.xs,
-    marginLeft: SPACING.sm,
-  },
-  inputderColor: COLORS.border,
-    gap: SPACING.md,
   },
   input: {
     flex: 1,
     paddingVertical: SPACING.md,
     ...TEXT_STYLES.body,
     color: COLORS.text,
+  },
+  errorText: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.error,
+    marginTop: SPACING.xs,
+    marginLeft: SPACING.sm,
   },
   forgotPassword: {
     ...TEXT_STYLES.bodySm,
@@ -305,84 +268,6 @@ const styles = StyleSheet.create({
   loginButtonText: {
     ...TEXT_STYLES.subtitle,
     color: COLORS.textInverse,
-  },
-  adminButton: {
-    backgroundColor: COLORS.success,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.md,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: SPACING.lg,
-    elevation: 2,
-  },
-  adminButtonText: {
-    ...TEXT_STYLES.body,
-    color: COLORS.textInverse,
-    fontWeight: "700",
-  },
-  driverButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xl,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  driverButtonText: {
-    ...TEXT_STYLES.body,
-    color: COLORS.textInverse,
-    fontWeight: '700',
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: SPACING.xl,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-  dividerText: {
-    ...TEXT_STYLES.caption,
-    color: COLORS.textTertiary,
-    marginHorizontal: SPACING.md,
-  },
-  socialContainer: {
-    flexDirection: "row",
-    gap: SPACING.lg,
-  },
-  socialButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: SPACING.sm,
-  },
-  socialButtonText: {
-    ...TEXT_STYLES.bodySm,
-    color: COLORS.text,
-    fontWeight: "600",
-  },
-  altButton: {
-    alignSelf: "center",
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  altButtonText: {
-    ...TEXT_STYLES.bodySm,
-    color: COLORS.primary,
-    fontWeight: "700",
   },
   footer: {
     flexDirection: "row",

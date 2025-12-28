@@ -18,9 +18,6 @@ type AuthContextValue = {
   token: string | null
   refreshToken: string | null
   signIn: (token: string, refreshToken: string, user: UserData) => Promise<void>
-  signInUser: () => void // Deprecated, kept for compatibility but should use signIn
-  signInDriver: () => void // Deprecated
-  signInAdmin: () => void // Deprecated
   signOut: () => Promise<void>
   refreshAccessToken: () => Promise<boolean>
 }
@@ -85,7 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!refreshTokenState) return false
     
     try {
-      const API_URL = __DEV__ ? 'http://192.168.1.104:4000/api' : 'https://api.suba.com/api'
+      // Importar API_URL desde el servicio centralizado
+      const { API_URL } = require('../services/auth')
       const response = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,11 +111,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Compatibility wrappers - these will be removed eventually
-  const signInUser = () => {} 
-  const signInDriver = () => {}
-  const signInAdmin = () => {}
-
   const value: AuthContextValue = {
     isAuthenticated: !!token,
     isLoading,
@@ -127,10 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshToken: refreshTokenState,
     signIn,
     signOut,
-    refreshAccessToken,
-    signInUser,
-    signInDriver,
-    signInAdmin
+    refreshAccessToken
   }
 
   return (
