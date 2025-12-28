@@ -158,19 +158,6 @@ export async function login(req: Request, res: Response) {
   }
 }
 
-// Mantener endpoints por rol para compatibilidad (opcional)
-export async function loginRider(req: Request, res: Response) {
-  return login(req, res);
-}
-
-export async function loginDriver(req: Request, res: Response) {
-  return login(req, res);
-}
-
-export async function loginAdmin(req: Request, res: Response) {
-  return login(req, res);
-}
-
 export async function profile(req: Request, res: Response) {
   const user = await User.findById(req.user?.id).select('-password');
   return res.json({ user });
