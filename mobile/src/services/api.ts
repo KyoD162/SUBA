@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // Puerto del backend API
 const API_PORT = 4000;
@@ -34,9 +35,13 @@ const getApiUrl = (): string => {
       return apiUrl;
     }
     
-    // Fallback si no hay hostUri (raro, pero por si acaso)
-    console.warn('[API] No se pudo detectar IP. Usando localhost');
-    return `http://localhost:${API_PORT}/api`;
+    // Fallback para emuladores sin hostUri
+    // Android emulator usa 10.0.2.2 para acceder al localhost del host
+    // iOS simulator puede usar localhost directamente
+    const fallbackHost = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+    const fallbackUrl = `http://${fallbackHost}:${API_PORT}/api`;
+    console.warn('[API] No se pudo detectar IP. Usando fallback:', fallbackUrl);
+    return fallbackUrl;
   }
   
   // 3. Producción

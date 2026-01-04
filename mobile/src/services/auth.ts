@@ -1,10 +1,24 @@
-import { Platform } from 'react-native';
+import { API_URL } from './api';
 
-// Replace with your machine's IP address if running on physical device
-const DEV_API_URL = 'http://192.168.1.104:4000/api'; 
-const PROD_API_URL = 'https://api.suba.com/api';
-
-export const API_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
+/**
+ * Maneja errores de red y devuelve un mensaje amigable
+ */
+function handleNetworkError(error: any): never {
+  console.error('[AUTH] Error de red:', error.message);
+  
+  if (error.message?.includes('Network request failed') || 
+      error.message?.includes('fetch failed') ||
+      error.message?.includes('Failed to fetch')) {
+    throw new Error(
+      'No se puede conectar al servidor. Verifica que:\n' +
+      '1. El servidor API esté ejecutándose (npm run dev en la carpeta api)\n' +
+      '2. Estés conectado a la misma red WiFi\n' +
+      '3. El firewall no esté bloqueando el puerto 4000'
+    );
+  }
+  
+  throw error;
+}
 
 export const authService = {
   async registerRider(data: any) {
@@ -25,14 +39,17 @@ export const authService = {
       
       if (!response.ok) {
         console.error('[AUTH] Error en registro:', json.error);
-        throw new Error(json.error || 'Error en registro');
+        throw new Error(json.error || json.details?.[0]?.message || 'Error en registro');
       }
       
       console.log('[AUTH] Registro exitoso!');
       return json;
     } catch (error: any) {
-      console.error('[AUTH] Error de red o fetch:', error.message);
-      throw error;
+      // Si ya es un error procesado, re-lanzarlo
+      if (error.message && !error.message.includes('Network request failed')) {
+        throw error;
+      }
+      handleNetworkError(error);
     }
   },
 
@@ -61,8 +78,11 @@ export const authService = {
       console.log('[AUTH] Login exitoso!');
       return json;
     } catch (error: any) {
-      console.error('[AUTH] Error de red o fetch:', error.message);
-      throw error;
+      // Si ya es un error procesado, re-lanzarlo
+      if (error.message && !error.message.includes('Network request failed')) {
+        throw error;
+      }
+      handleNetworkError(error);
     }
   }
 };
