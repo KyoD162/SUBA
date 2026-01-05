@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react"
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { API_URL, apiFetch } from '../services/api'
 
 type UserRole = 'rider' | 'driver' | 'admin'
 
@@ -66,15 +67,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    // Flujo secuencial (best-effort backend -> limpieza storage -> limpieza memoria)
     try {
-      await AsyncStorage.removeItem('auth_token')
-      await AsyncStorage.removeItem('auth_refresh_token')
-      await AsyncStorage.removeItem('auth_user')
+      try {
+        // No bloquea el logout local si falla el backend.
+        await apiFetch(`${API_URL}/auth/logout`, {
+          method: 'POST',
+          // El backend actual no requiere body, pero lo dejamos listo para futuros refresh tokens revocables.
+          body: JSON.stringify({ refreshToken: refreshTokenState }),
+        })
+      } catch (e) {
+        // Ignorar: aun si hay problema de red / token expirado, se elimina el estado local.
+      }
+
+      await AsyncStorage.multiRemove(['auth_token', 'auth_refresh_token', 'auth_user'])
+    } catch (e) {
+      // Fallback: intentar individualmente
+      try {
+        await AsyncStorage.removeItem('auth_token')
+        await AsyncStorage.removeItem('auth_refresh_token')
+        await AsyncStorage.removeItem('auth_user')
+      } catch (inner) {
+        console.error('Failed to remove auth data', inner)
+      }
+    } finally {
+      // Garantizar limpieza en memoria aunque el storage falle.
       setToken(null)
       setRefreshTokenState(null)
       setUser(null)
-    } catch (e) {
-      console.error('Failed to remove auth data', e)
     }
   }
 
@@ -82,8 +102,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!refreshTokenState) return false
     
     try {
-      // Importar API_URL desde el servicio centralizado
-      const { API_URL } = require('../services/auth')
       const response = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -220,3 +220,20 @@ export async function refreshToken(req: Request, res: Response) {
   }
 }
 
+// --- LOGOUT ---
+// Con JWT stateless el "logout" real es que el cliente elimine tokens.
+// Este endpoint existe para auditoría y para futuros refresh tokens revocables.
+export async function logout(req: Request, res: Response) {
+  try {
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    const ip = req.ip;
+    const userAgent = req.get('user-agent');
+    console.log('[LOGOUT]', JSON.stringify({ userId, role, ip, userAgent }));
+  } catch (e) {
+    // No bloquear logout por fallas de logging
+  }
+
+  return res.status(204).send();
+}
+

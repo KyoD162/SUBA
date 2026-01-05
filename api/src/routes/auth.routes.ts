@@ -5,7 +5,8 @@ import {
   login,
   registerRider, registerDriver, registerAdmin,
   profile,
-  refreshToken
+  refreshToken,
+  logout
 } from '../controllers/auth.controller';
 
 export const authRouter = Router();
@@ -20,6 +21,9 @@ authRouter.post('/register/admin', authLimiter, registerAdmin);
 
 // Token refresh
 authRouter.post('/refresh', refreshTokenLimiter, refreshToken);
+
+// Logout (JWT stateless: limpia tokens en cliente; aquí solo auditoría)
+authRouter.post('/logout', auth(true), logout);
 
 // Perfil del usuario autenticado
 authRouter.get('/me', auth(true), profile);
