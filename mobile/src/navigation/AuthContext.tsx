@@ -31,6 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [refreshTokenState, setRefreshTokenState] = useState<string | null>(null)
   const [user, setUser] = useState<UserData | null>(null)
 
+  const normalizeRole = (role?: string | null): UserRole | null => {
+    if (!role) return null
+    const trimmed = role.trim().toLowerCase()
+    if (trimmed === 'rider' || trimmed === 'driver' || trimmed === 'admin') return trimmed
+    console.warn('[AUTH] Rol desconocido recibido:', role)
+    return null
+  }
+
   useEffect(() => {
     loadStorageData()
   }, [])
@@ -44,7 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (storedToken && storedUser) {
         setToken(storedToken)
         setRefreshTokenState(storedRefreshToken)
-        setUser(JSON.parse(storedUser))
+        const parsed = JSON.parse(storedUser)
+        const normalizedRole = normalizeRole(parsed?.role)
+        if (normalizedRole) {
+          setUser({ ...parsed, role: normalizedRole })
+        } else {
+          await signOut()
+        }
       }
     } catch (e) {
       console.error('Failed to load auth data', e)
@@ -55,12 +69,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (newToken: string, newRefreshToken: string, newUser: UserData) => {
     try {
+      const normalizedRole = normalizeRole(newUser?.role)
+      if (!normalizedRole) {
+        throw new Error('Rol de usuario no reconocido en login')
+      }
+      const userToSave = { ...newUser, role: normalizedRole }
+
       await AsyncStorage.setItem('auth_token', newToken)
       await AsyncStorage.setItem('auth_refresh_token', newRefreshToken)
-      await AsyncStorage.setItem('auth_user', JSON.stringify(newUser))
+      await AsyncStorage.setItem('auth_user', JSON.stringify(userToSave))
       setToken(newToken)
       setRefreshTokenState(newRefreshToken)
-      setUser(newUser)
+      setUser(userToSave)
     } catch (e) {
       console.error('Failed to save auth data', e)
     }
@@ -114,8 +134,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await AsyncStorage.setItem('auth_token', json.token)
         setToken(json.token)
         if (json.user) {
-          setUser(json.user)
-          await AsyncStorage.setItem('auth_user', JSON.stringify(json.user))
+          const normalizedRole = normalizeRole(json.user.role)
+          if (!normalizedRole) {
+            await signOut()
+            return false
+          }
+          const normalizedUser = { ...json.user, role: normalizedRole }
+          setUser(normalizedUser)
+          await AsyncStorage.setItem('auth_user', JSON.stringify(normalizedUser))
         }
         return true
       }

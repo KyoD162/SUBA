@@ -167,6 +167,12 @@ function AdminTabNavigator() {
 function NavigationContent() {
   const { isAuthenticated, user, isLoading } = useAuth()
 
+  if (isAuthenticated) {
+    console.log('[NAV] Usuario autenticado con rol:', user?.role)
+  } else {
+    console.log('[NAV] Usuario no autenticado, mostrando flujo Auth')
+  }
+
   if (isLoading) {
     // Podríamos mostrar un splash screen aquí
     return null
@@ -193,6 +199,10 @@ function NavigationContent() {
                 component={require('../screens/main/EditProfileScreen').default}
                 options={{ animation: 'default', contentStyle: { backgroundColor: COLORS.background } }}
               />
+            )}
+            {/* Fallback: si hay token pero rol no coincide, regresamos al login para evitar loops */}
+            {role !== 'driver' && role !== 'admin' && role !== 'rider' && (
+              <Stack.Screen name="Auth" component={LoginScreen} />
             )}
             <Stack.Screen
               name="RouteDetail"
