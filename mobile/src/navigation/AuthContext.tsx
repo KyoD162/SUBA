@@ -9,6 +9,10 @@ interface UserData {
   email: string
   role: UserRole
   name?: string
+  phone?: string
+  city?: string
+  documentId?: string
+  bio?: string
 }
 
 type AuthContextValue = {
@@ -21,6 +25,7 @@ type AuthContextValue = {
   signIn: (token: string, refreshToken: string, user: UserData) => Promise<void>
   signOut: () => Promise<void>
   refreshAccessToken: () => Promise<boolean>
+  updateUser: (user: UserData) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -83,6 +88,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userToSave)
     } catch (e) {
       console.error('Failed to save auth data', e)
+    }
+  }
+
+  const updateUser = async (newUser: UserData) => {
+    const normalizedRole = normalizeRole(newUser?.role)
+    if (!normalizedRole) return
+
+    const userToSave = { ...newUser, role: normalizedRole }
+    try {
+      await AsyncStorage.setItem('auth_user', JSON.stringify(userToSave))
+      setUser(userToSave)
+    } catch (e) {
+      console.error('Failed to update user data', e)
     }
   }
 
@@ -164,7 +182,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshToken: refreshTokenState,
     signIn,
     signOut,
-    refreshAccessToken
+    refreshAccessToken,
+    updateUser
   }
 
   return (

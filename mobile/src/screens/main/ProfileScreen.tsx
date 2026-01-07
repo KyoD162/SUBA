@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Card, Badge, Button } from '../../components';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAuth } from '../../navigation/AuthContext';
+import { userService } from '../../services/user';
 
 interface MenuOption {
   id: string;
@@ -47,10 +48,34 @@ const BASE_MENU_OPTIONS: MenuOption[] = [
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { signOut } = useAuth();
+  const { signOut, user: authUser, updateUser } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [offersEnabled, setOffersEnabled] = useState(true);
+  const [profile, setProfile] = useState(authUser);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!authUser?.id) return;
+      setLoadingProfile(true);
+      try {
+        const freshUser = await userService.getById(authUser.id);
+        setProfile(freshUser);
+        await updateUser(freshUser);
+        setProfileError(null);
+      } catch (e: any) {
+        setProfileError(e?.message || 'No se pudo cargar tu perfil');
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+    // updateUser is stable enough for this effect; omit from deps to avoid refetch loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.id]);
 
   const handleSignOut = async () => {
     if (isSigningOut) return;
@@ -121,12 +146,19 @@ export default function ProfileScreen() {
     </View>
   );
 
+  const displayName = profile?.name || 'Tu nombre';
+  const displayEmail = profile?.email || 'Completa tu correo';
+  const badgeLabel = profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Perfil';
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Perfil</Text>
+          {profileError && (
+            <Text style={[styles.preferenceDescription, { color: COLORS.error }]}>{profileError}</Text>
+          )}
         </View>
 
         {/* Gradient Profile Card */}
@@ -138,10 +170,10 @@ export default function ProfileScreen() {
               </View>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.userNameGradient}>Jesus Rondon</Text>
-              <Text style={styles.userEmailGradient}>jesus.rondon@email.com</Text>
+              <Text style={styles.userNameGradient}>{loadingProfile ? 'Cargando...' : displayName}</Text>
+              <Text style={styles.userEmailGradient}>{loadingProfile ? '' : displayEmail}</Text>
             </View>
-            <Badge label="Gold" variant="primary" />
+            <Badge label={badgeLabel} variant="primary" />
           </View>
           {/* Edit chip removed to avoid duplication */}
           <View style={styles.statsContainerGradient}>

@@ -102,9 +102,11 @@ export function validatePhone(phone: string): ValidationError | null {
     return { field: 'phone', message: 'El teléfono es requerido' };
   }
 
-  const cleanPhone = phone.replace(/[\s\-()]/g, '');
+  const cleanPhone = phone
+    .replace(/[\s\-()]/g, '')
+    .replace(/^\+/, '');
 
-  const phoneRegex = /^(\+58|0)?4\d{9}$/;
+  const phoneRegex = /^(58|\+?58|0)?4\d{9}$/;
   
   if (!phoneRegex.test(cleanPhone)) {
     return { field: 'phone', message: 'Formato de teléfono inválido. Ej: 0412-000-0000' };

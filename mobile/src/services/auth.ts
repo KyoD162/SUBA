@@ -15,6 +15,10 @@ export interface AuthResponse {
     email: string
     role: 'rider' | 'driver' | 'admin'
     name?: string
+    phone?: string
+    city?: string
+    documentId?: string
+    bio?: string
   }
 }
 

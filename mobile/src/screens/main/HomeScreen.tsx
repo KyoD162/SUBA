@@ -4,8 +4,13 @@ import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES, globalStyles } from "../../theme"
 import { Button, StatCard, Card, Badge, CurrencyDisplay } from "../../components"
 import React from "react"
+import { useAuth } from "../../navigation/AuthContext"
 
 export default function HomeScreen() {
+  const { user } = useAuth()
+  const firstName = user?.name ? user.name.split(" ")[0] : "Usuario"
+  const locationText = user?.city ? `${user.city} - Transporte inteligente` : "Transporte inteligente"
+
   const nearbyRoutes = [
     { id: "A1", name: "Ruta A1 - Unare", stops: 12, distance: 2.3, eta: "5 min", priceUSD: 0.5, neighborhood: "Unare" },
     {
@@ -34,8 +39,8 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Hola, Jesus</Text>
-            <Text style={styles.date}>Puerto Ordaz - Transporte inteligente</Text>
+            <Text style={styles.greeting}>Hola, {firstName}</Text>
+            <Text style={styles.date}>{locationText}</Text>
           </View>
           <View style={styles.avatar} />
         </View>

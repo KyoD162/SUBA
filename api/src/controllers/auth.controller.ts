@@ -11,6 +11,17 @@ import {
   sanitizeString 
 } from '../utils/validation';
 
+const buildUserPayload = (user: any) => ({
+  id: user.id,
+  email: user.email,
+  role: user.role,
+  name: user.name,
+  phone: user.phone,
+  city: user.city,
+  documentId: user.documentId,
+  bio: user.bio,
+});
+
 // --- REGISTER ---
 
 export async function registerRider(req: Request, res: Response) {
@@ -56,7 +67,7 @@ export async function registerRider(req: Request, res: Response) {
     return res.status(201).json({ 
       token, 
       refreshToken,
-      user: { id: user.id, email: user.email, role: user.role, name: user.name } 
+      user: buildUserPayload(user)
     });
   } catch (error: any) {
     console.error('[REGISTER] Error:', error.message);
@@ -96,7 +107,7 @@ export async function registerDriver(req: Request, res: Response) {
   return res.status(201).json({ 
     token, 
     refreshToken,
-    user: { id: user.id, email: user.email, role: user.role, name: user.name } 
+    user: buildUserPayload(user)
   });
 }
 
@@ -131,7 +142,7 @@ export async function registerAdmin(req: Request, res: Response) {
   return res.status(201).json({ 
     token, 
     refreshToken,
-    user: { id: user.id, email: user.email, role: user.role, name: user.name } 
+    user: buildUserPayload(user)
   });
 }
 
@@ -169,7 +180,7 @@ export async function login(req: Request, res: Response) {
     return res.json({ 
       token, 
       refreshToken,
-      user: { id: user.id, email: user.email, role: user.role, name: user.name } 
+      user: buildUserPayload(user)
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -179,7 +190,10 @@ export async function login(req: Request, res: Response) {
 
 export async function profile(req: Request, res: Response) {
   const user = await User.findById(req.user?.id).select('-password');
-  return res.json({ user });
+  if (!user) {
+    return res.status(404).json({ error: 'Usuario no encontrado' });
+  }
+  return res.json({ user: buildUserPayload(user) });
 }
 
 // Endpoint para refrescar el access token usando refresh token
@@ -213,7 +227,7 @@ export async function refreshToken(req: Request, res: Response) {
     
     return res.json({ 
       token: newAccessToken,
-      user: { id: user.id, email: user.email, role: user.role, name: user.name }
+      user: buildUserPayload(user)
     });
   } catch (error) {
     return res.status(401).json({ error: 'Invalid or expired refresh token' });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,14 +19,16 @@ import { Card, Input, Button, SelectField } from '../../components';
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from '../../theme';
 import type { RootStackParamList } from '../../navigation/types';
 import React from 'react';
+import { useAuth } from '../../navigation/AuthContext';
+import { userService } from '../../services/user';
 
-const initialProfile = {
-  fullName: 'Jesus Rondon',
-  email: 'jesus.rondon@email.com',
-  phone: '+58 424 555 1234',
-  documentId: 'V-12.345.678',
-  city: 'Puerto Ordaz',
-  bio: 'Ingeniero de software apasionado por mejorar la movilidad urbana.',
+const emptyProfile = {
+  fullName: '',
+  email: '',
+  phone: '',
+  documentId: '',
+  city: '',
+  bio: '',
 };
 
 const initialPreferences = {
@@ -55,14 +57,52 @@ type PreferenceForm = typeof initialPreferences;
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const [profile, setProfile] = useState<ProfileForm>(initialProfile);
-  const [form, setForm] = useState<ProfileForm>(initialProfile);
+  const { user: authUser, updateUser } = useAuth();
+  const [profile, setProfile] = useState<ProfileForm>(emptyProfile);
+  const [form, setForm] = useState<ProfileForm>(emptyProfile);
+    const summaryName = form.fullName || profile.fullName || 'Agrega tu nombre';
+    const summaryEmail = form.email || profile.email || 'Agrega tu correo';
+    const summaryCity = form.city || profile.city || 'Ciudad no definida';
   const [preferences, setPreferences] = useState<PreferenceForm>(initialPreferences);
   const [preferenceDraft, setPreferenceDraft] = useState<PreferenceForm>(initialPreferences);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success'>('idle');
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileForm, string>>>({});
   const [cityPickerVisible, setCityPickerVisible] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const mapFromUser = (u: any): ProfileForm => ({
+    fullName: u?.name || '',
+    email: u?.email || '',
+    phone: u?.phone || '',
+    documentId: u?.documentId || '',
+    city: u?.city || '',
+    bio: u?.bio || '',
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!authUser?.id) return;
+      setLoadingProfile(true);
+      try {
+        const data = await userService.getById(authUser.id);
+        const mapped = mapFromUser(data);
+        setProfile(mapped);
+        setForm(mapped);
+        setLoadError(null);
+        await updateUser(data);
+      } catch (e: any) {
+        setLoadError(e?.message || 'No se pudo cargar tu perfil');
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+    // updateUser is stable enough for this effect; omit from deps to avoid refetch loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.id]);
 
   const hasChanges = useMemo(() => {
     return (
@@ -118,6 +158,7 @@ export default function EditProfileScreen() {
 
   const handleSave = async () => {
     if (!hasChanges) return;
+    if (!authUser?.id) return;
     const fieldsToValidate: (keyof ProfileForm)[] = ['email', 'phone', 'documentId', 'city'];
     const validationResults: Partial<Record<keyof ProfileForm, string | undefined>> = {};
     fieldsToValidate.forEach((field) => {
@@ -129,12 +170,29 @@ export default function EditProfileScreen() {
     const hasBlockingErrors = Object.values(validationResults).some((message) => Boolean(message));
     if (hasBlockingErrors) return;
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setProfile(form);
-    setPreferences(preferenceDraft);
-    setSaving(false);
-    setStatus('success');
-    // Future: replace the above block with an API call once the backend endpoint exists
+    try {
+      const updated = await userService.update(authUser.id, {
+        name: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        documentId: form.documentId,
+        city: form.city,
+        bio: form.bio,
+      });
+
+      const mapped = mapFromUser(updated);
+      setProfile(mapped);
+      setForm(mapped);
+      setPreferences(preferenceDraft);
+      setStatus('success');
+      setLoadError(null);
+      await updateUser(updated);
+    } catch (e: any) {
+      setStatus('error');
+      setLoadError(e?.message || 'No se pudo guardar los cambios');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -153,7 +211,21 @@ export default function EditProfileScreen() {
         {status === 'success' && (
           <View style={styles.statusBanner}>
             <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
-            <Text style={styles.statusText}>Cambios guardados localmente</Text>
+            <Text style={styles.statusText}>Cambios guardados</Text>
+          </View>
+        )}
+
+        {status === 'error' && (
+          <View style={[styles.statusBanner, { borderColor: COLORS.error }]}>
+            <Ionicons name="warning" size={18} color={COLORS.error} />
+            <Text style={[styles.statusText, { color: COLORS.error }]}>{loadError || 'No se pudieron guardar los cambios'}</Text>
+          </View>
+        )}
+
+        {loadError && status === 'idle' && (
+          <View style={[styles.statusBanner, { borderColor: COLORS.error }]}>
+            <Ionicons name="warning" size={18} color={COLORS.error} />
+            <Text style={[styles.statusText, { color: COLORS.error }]}>{loadError}</Text>
           </View>
         )}
 
@@ -162,9 +234,9 @@ export default function EditProfileScreen() {
             <Ionicons name="person" size={28} color={COLORS.textInverse} />
           </View>
           <View style={styles.summaryContent}>
-            <Text style={styles.summaryName}>{profile.fullName}</Text>
-            <Text style={styles.summaryMeta}>{profile.email}</Text>
-            <Text style={styles.summaryMeta}>{profile.city}</Text>
+            <Text style={styles.summaryName}>{loadingProfile ? 'Cargando perfil...' : summaryName}</Text>
+            <Text style={styles.summaryMeta}>{loadingProfile ? '' : summaryEmail}</Text>
+            <Text style={styles.summaryMeta}>{loadingProfile ? '' : summaryCity}</Text>
           </View>
         </Card>
 
@@ -254,10 +326,10 @@ export default function EditProfileScreen() {
         </Card>
 
         <Button
-          title={hasChanges ? 'Guardar cambios' : 'Nada por guardar'}
+          title={loadingProfile ? 'Sincronizando...' : hasChanges ? 'Guardar cambios' : 'Nada por guardar'}
           onPress={handleSave}
-          loading={saving}
-          disabled={!hasChanges}
+          loading={saving || loadingProfile}
+          disabled={!hasChanges || saving || loadingProfile}
           size="lg"
         />
       </ScrollView>

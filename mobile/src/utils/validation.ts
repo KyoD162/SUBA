@@ -115,10 +115,10 @@ export function validatePhone(phone: string): ValidationResult {
   }
 
   // Remover espacios, guiones y paréntesis para validación
-  const cleanPhone = phone.replace(/[\s\-()]/g, '');
+  const cleanPhone = phone.replace(/[\s\-()]/g, '').replace(/^\+/, '');
 
   // Formato venezolano: +58XXXXXXXXXX o 0XXXXXXXXXX
-  const phoneRegex = /^(\+58|0)?4\d{9}$/;
+  const phoneRegex = /^(58|\+?58|0)?4\d{9}$/;
   
   if (!phoneRegex.test(cleanPhone)) {
     return { isValid: false, error: 'Formato inválido. Ej: 0412-000-0000' };
