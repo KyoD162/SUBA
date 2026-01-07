@@ -207,8 +207,8 @@ export default function RegisterScreen() {
       await signIn(response.token, response.refreshToken, response.user);
       console.log('[REGISTER SCREEN] signIn completado!');
     } catch (error: any) {
-      console.error('[REGISTER SCREEN] Error:', error.message);
-      alert(error.message || 'Error al registrar');
+      console.error('[REGISTER SCREEN] Error:', error?.message || error);
+      alert(authService.getErrorMessage(error));
     } finally {
       console.log('[REGISTER SCREEN] Finalizando, setLoading(false)');
       setLoading(false)

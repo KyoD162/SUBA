@@ -7,6 +7,14 @@ export interface LoginData {
   password: string
 }
 
+export interface RiderRegistrationData {
+  email: string
+  password: string
+  name?: string
+  phone?: string
+  specialDiscount?: 'none' | 'student' | 'disabled' | 'senior'
+}
+
 export interface AuthResponse {
   token: string
   refreshToken: string
@@ -34,6 +42,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS: 'Correo o contraseña incorrectos.',
   USER_NOT_FOUND: 'No existe una cuenta con este correo electrónico.',
   ACCOUNT_DISABLED: 'Tu cuenta ha sido desactivada. Contacta al soporte.',
+  EMAIL_IN_USE: 'Ya existe una cuenta con este correo electrónico.',
   TOO_MANY_ATTEMPTS: 'Demasiados intentos fallidos. Espera unos minutos.',
   SERVER_ERROR: 'Error del servidor. Intenta más tarde.',
   UNKNOWN_ERROR: 'Ocurrió un error inesperado. Intenta de nuevo.',
@@ -82,6 +91,12 @@ function mapHttpStatusToErrorCode(status: number, body: any): string {
   if (body?.code) return body.code
   if (body?.error) {
     const errorLower = body.error.toLowerCase()
+    if (
+      errorLower.includes('in use') ||
+      (errorLower.includes('email') && (errorLower.includes('exists') || errorLower.includes('used')))
+    ) {
+      return 'EMAIL_IN_USE'
+    }
     if (errorLower.includes('credential') || errorLower.includes('password') || errorLower.includes('invalid')) {
       return 'INVALID_CREDENTIALS'
     }
@@ -103,6 +118,8 @@ function mapHttpStatusToErrorCode(status: number, body: any): string {
       return 'ACCOUNT_DISABLED'
     case 404:
       return 'USER_NOT_FOUND'
+    case 409:
+      return 'EMAIL_IN_USE'
     case 429:
       return 'TOO_MANY_ATTEMPTS'
     case 500:
@@ -211,6 +228,63 @@ export const authService = {
         throw error
       }
       // Si no, procesar como error de red
+      handleNetworkError(error)
+    }
+  },
+
+  /**
+   * Registro de rider
+   * Backend: POST /auth/register/rider
+   */
+  async registerRider(data: RiderRegistrationData): Promise<AuthResponse> {
+    console.log('[AUTH] Iniciando registro de rider...')
+    console.log('[AUTH] URL:', `${API_URL}/auth/register/rider`)
+
+    const sanitizedEmail = sanitizeInput(data.email.toLowerCase().trim())
+    const trimmedPassword = data.password.trim()
+    const name = data.name ? sanitizeInput(data.name) : undefined
+    const phone = data.phone ? sanitizeInput(data.phone) : undefined
+    const specialDiscount = data.specialDiscount || 'none'
+
+    try {
+      const response = await fetchWithTimeout(`${API_URL}/auth/register/rider`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: sanitizedEmail,
+          password: trimmedPassword,
+          ...(name ? { name } : {}),
+          ...(phone ? { phone } : {}),
+          specialDiscount,
+        }),
+      })
+
+      const json = await parseJsonSafe(response)
+      console.log('[AUTH] Response status:', response.status)
+
+      if (json && process.env.NODE_ENV !== 'production') {
+        const safeJson = { ...json, token: json?.token ? '[OCULTO]' : undefined }
+        console.log('[AUTH] Response body:', JSON.stringify(safeJson, null, 2))
+      }
+
+      if (!response.ok) {
+        const errorCode = mapHttpStatusToErrorCode(response.status, json)
+        const technicalMessage = json?.error || json?.message || `HTTP ${response.status}`
+        console.error(`[AUTH] Registro falló: ${technicalMessage}`)
+        throw createAuthError(errorCode, technicalMessage)
+      }
+
+      if (!json?.token || !json?.user) {
+        console.error('[AUTH] Respuesta del servidor incompleta (registro)')
+        throw createAuthError('SERVER_ERROR', 'Respuesta del servidor incompleta')
+      }
+
+      console.log('[AUTH] Registro exitoso! Rol:', json.user.role)
+      return json as AuthResponse
+    } catch (error: any) {
+      if (error.code && error.userMessage) {
+        throw error
+      }
       handleNetworkError(error)
     }
   },
