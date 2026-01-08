@@ -7,20 +7,10 @@ import { Admin } from '../models/Admin';
 import { 
   validateRiderRegistration, 
   validateDriverRegistration, 
+  validateAdminRegistration,
   validateLoginData,
   sanitizeString 
 } from '../utils/validation';
-
-const buildUserPayload = (user: any) => ({
-  id: user.id,
-  email: user.email,
-  role: user.role,
-  name: user.name,
-  phone: user.phone,
-  city: user.city,
-  documentId: user.documentId,
-  bio: user.bio,
-});
 
 // --- REGISTER ---
 
@@ -67,7 +57,7 @@ export async function registerRider(req: Request, res: Response) {
     return res.status(201).json({ 
       token, 
       refreshToken,
-      user: buildUserPayload(user)
+      user: { id: user.id, email: user.email, role: user.role, name: user.name } 
     });
   } catch (error: any) {
     console.error('[REGISTER] Error:', error.message);
@@ -77,73 +67,99 @@ export async function registerRider(req: Request, res: Response) {
 }
 
 export async function registerDriver(req: Request, res: Response) {
-  const { email, password, name, phone, licenseNumber, vehiclePlate, vehicleModel } = req.body;
+  console.log('[REGISTER] Iniciando registro de driver...');
   
-  // Validar datos de entrada
-  const validationErrors = validateDriverRegistration(req.body);
-  if (validationErrors.length > 0) {
-    return res.status(400).json({ 
-      error: 'Datos inválidos', 
-      details: validationErrors 
-    });
-  }
-  
-  const existing = await User.findOne({ email: email.toLowerCase().trim() });
-  if (existing) return res.status(409).json({ error: 'Email in use' });
+  try {
+    const { email, password, name, phone, licenseNumber, vehiclePlate, vehicleModel } = req.body;
+    
+    // Validar datos de entrada
+    const validationErrors = validateDriverRegistration(req.body);
+    if (validationErrors.length > 0) {
+      console.log('[REGISTER] Errores de validación:', validationErrors);
+      return res.status(400).json({ 
+        error: 'Datos inválidos', 
+        details: validationErrors 
+      });
+    }
+    
+    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existing) {
+      console.log('[REGISTER] Email ya existe');
+      return res.status(409).json({ error: 'Email in use' });
+    }
 
-  const user = await Driver.create({ 
-    email: sanitizeString(email.toLowerCase()), 
-    password, 
-    name: sanitizeString(name), 
-    phone: sanitizeString(phone),
-    licenseNumber: sanitizeString(licenseNumber),
-    vehiclePlate: sanitizeString(vehiclePlate),
-    vehicleModel: sanitizeString(vehicleModel),
-    role: 'driver' 
-  });
-  
-  const token = user.generateToken();
-  const refreshToken = user.generateRefreshToken();
-  return res.status(201).json({ 
-    token, 
-    refreshToken,
-    user: buildUserPayload(user)
-  });
+    const user = await Driver.create({ 
+      email: sanitizeString(email.toLowerCase()), 
+      password, 
+      name: sanitizeString(name), 
+      phone: sanitizeString(phone),
+      licenseNumber: sanitizeString(licenseNumber),
+      vehiclePlate: sanitizeString(vehiclePlate),
+      vehicleModel: sanitizeString(vehicleModel),
+      role: 'driver' 
+    });
+    
+    console.log('[REGISTER] Driver creado con ID:', user.id);
+    const token = user.generateToken();
+    const refreshToken = user.generateRefreshToken();
+    
+    return res.status(201).json({ 
+      token, 
+      refreshToken,
+      user: { id: user.id, email: user.email, role: user.role, name: user.name } 
+    });
+  } catch (error: any) {
+    console.error('[REGISTER] Error:', error.message);
+    console.error('[REGISTER] Stack:', error.stack);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
 }
 
 export async function registerAdmin(req: Request, res: Response) {
-  const { email, password, name, phone, department } = req.body;
+  console.log('[REGISTER] Iniciando registro de admin...');
   
-  // Validaciones básicas (similar a driver)
-  const validationErrors = validateDriverRegistration({ ...req.body, licenseNumber: 'temp', vehiclePlate: 'temp', vehicleModel: 'temp' });
-  const relevantErrors = validationErrors.filter(e => !['licenseNumber', 'vehiclePlate', 'vehicleModel'].includes(e.field));
-  
-  if (relevantErrors.length > 0) {
-    return res.status(400).json({ 
-      error: 'Datos inválidos', 
-      details: relevantErrors 
-    });
-  }
-  
-  const existing = await User.findOne({ email: email.toLowerCase().trim() });
-  if (existing) return res.status(409).json({ error: 'Email in use' });
+  try {
+    const { email, password, name, phone, department } = req.body;
+    
+    // Validar datos de entrada con función específica para admin
+    const validationErrors = validateAdminRegistration(req.body);
+    if (validationErrors.length > 0) {
+      console.log('[REGISTER] Errores de validación:', validationErrors);
+      return res.status(400).json({ 
+        error: 'Datos inválidos', 
+        details: validationErrors 
+      });
+    }
+    
+    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existing) {
+      console.log('[REGISTER] Email ya existe');
+      return res.status(409).json({ error: 'Email in use' });
+    }
 
-  const user = await Admin.create({ 
-    email: sanitizeString(email.toLowerCase()), 
-    password, 
-    name: sanitizeString(name), 
-    phone: sanitizeString(phone),
-    department: department ? sanitizeString(department) : undefined,
-    role: 'admin' 
-  });
-  
-  const token = user.generateToken();
-  const refreshToken = user.generateRefreshToken();
-  return res.status(201).json({ 
-    token, 
-    refreshToken,
-    user: buildUserPayload(user)
-  });
+    const user = await Admin.create({ 
+      email: sanitizeString(email.toLowerCase()), 
+      password, 
+      name: sanitizeString(name), 
+      phone: sanitizeString(phone),
+      department: department ? sanitizeString(department) : undefined,
+      role: 'admin' 
+    });
+    
+    console.log('[REGISTER] Admin creado con ID:', user.id);
+    const token = user.generateToken();
+    const refreshToken = user.generateRefreshToken();
+    
+    return res.status(201).json({ 
+      token, 
+      refreshToken,
+      user: { id: user.id, email: user.email, role: user.role, name: user.name } 
+    });
+  } catch (error: any) {
+    console.error('[REGISTER] Error:', error.message);
+    console.error('[REGISTER] Stack:', error.stack);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
 }
 
 // --- LOGIN ---
@@ -180,7 +196,7 @@ export async function login(req: Request, res: Response) {
     return res.json({ 
       token, 
       refreshToken,
-      user: buildUserPayload(user)
+      user: { id: user.id, email: user.email, role: user.role, name: user.name } 
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -190,10 +206,7 @@ export async function login(req: Request, res: Response) {
 
 export async function profile(req: Request, res: Response) {
   const user = await User.findById(req.user?.id).select('-password');
-  if (!user) {
-    return res.status(404).json({ error: 'Usuario no encontrado' });
-  }
-  return res.json({ user: buildUserPayload(user) });
+  return res.json({ user });
 }
 
 // Endpoint para refrescar el access token usando refresh token
@@ -227,7 +240,7 @@ export async function refreshToken(req: Request, res: Response) {
     
     return res.json({ 
       token: newAccessToken,
-      user: buildUserPayload(user)
+      user: { id: user.id, email: user.email, role: user.role, name: user.name }
     });
   } catch (error) {
     return res.status(401).json({ error: 'Invalid or expired refresh token' });

@@ -64,3 +64,42 @@ export function auth(required = true) {
     }
   };
 }
+
+/**
+ * Middleware para verificar que el usuario tenga uno de los roles permitidos
+ * Debe usarse DESPUÉS del middleware auth()
+ * 
+ * @param allowedRoles - Array de roles permitidos
+ * @returns Middleware que verifica el rol del usuario
+ * 
+ * @example
+ * // Solo admins pueden acceder
+ * router.post('/admin-only', auth(true), requireRole(['admin']), handler)
+ * 
+ * // Admins y drivers pueden acceder
+ * router.get('/staff', auth(true), requireRole(['admin', 'driver']), handler)
+ */
+export function requireRole(allowedRoles: ('rider' | 'driver' | 'admin')[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const userRole = req.user?.role;
+
+    if (!userRole) {
+      console.warn('[AUTH] requireRole: No hay rol en el usuario autenticado');
+      return res.status(403).json({ 
+        error: 'Acceso denegado', 
+        code: 'NO_ROLE' 
+      });
+    }
+
+    if (!allowedRoles.includes(userRole as any)) {
+      console.warn(`[AUTH] requireRole: Rol '${userRole}' no tiene permiso. Requeridos: ${allowedRoles.join(', ')}`);
+      return res.status(403).json({ 
+        error: 'No tienes permisos para realizar esta acción', 
+        code: 'INSUFFICIENT_PERMISSIONS',
+        requiredRoles: allowedRoles
+      });
+    }
+
+    return next();
+  };
+}

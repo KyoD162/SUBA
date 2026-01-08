@@ -3,13 +3,14 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES, globalStyles } from "../../theme"
 import { Button, StatCard, Card, Badge, CurrencyDisplay } from "../../components"
-import React from "react"
 import { useAuth } from "../../navigation/AuthContext"
+import React from "react"
 
 export default function HomeScreen() {
-  const { user } = useAuth()
-  const firstName = user?.name ? user.name.split(" ")[0] : "Usuario"
-  const locationText = user?.city ? `${user.city} - Transporte inteligente` : "Transporte inteligente"
+  const { user } = useAuth();
+  
+  // Obtener el primer nombre del usuario para el saludo
+  const firstName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Usuario';
 
   const nearbyRoutes = [
     { id: "A1", name: "Ruta A1 - Unare", stops: 12, distance: 2.3, eta: "5 min", priceUSD: 0.5, neighborhood: "Unare" },
@@ -40,7 +41,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Hola, {firstName}</Text>
-            <Text style={styles.date}>{locationText}</Text>
+            <Text style={styles.date}>Puerto Ordaz - Transporte inteligente</Text>
           </View>
           <View style={styles.avatar} />
         </View>

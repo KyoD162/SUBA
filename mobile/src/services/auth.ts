@@ -2,24 +2,50 @@ import { API_URL } from './api'
 import { sanitizeInput } from '../utils/validation'
 
 // === TIPOS ===
+export type UserRole = 'rider' | 'driver' | 'admin'
+
 export interface LoginData {
   email: string
   password: string
 }
 
+export interface RegisterRiderData {
+  email: string
+  password: string
+  name: string
+  phone?: string
+  specialDiscount?: 'none' | 'student' | 'disabled' | 'senior'
+}
+
+export interface RegisterDriverData {
+  email: string
+  password: string
+  name: string
+  phone: string
+  licenseNumber: string
+  vehiclePlate: string
+  vehicleModel?: string
+}
+
+export interface RegisterAdminData {
+  email: string
+  password: string
+  name: string
+  phone: string
+  department?: string
+}
+
+export interface UserData {
+  id: string
+  email: string
+  role: UserRole
+  name?: string
+}
+
 export interface AuthResponse {
   token: string
   refreshToken: string
-  user: {
-    id: string
-    email: string
-    role: 'rider' | 'driver' | 'admin'
-    name?: string
-    phone?: string
-    city?: string
-    documentId?: string
-    bio?: string
-  }
+  user: UserData
 }
 
 export interface AuthError {
@@ -42,6 +68,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   SERVER_ERROR: 'Error del servidor. Intenta más tarde.',
   UNKNOWN_ERROR: 'Ocurrió un error inesperado. Intenta de nuevo.',
   VALIDATION_ERROR: 'Por favor verifica los datos ingresados.',
+  EMAIL_IN_USE: 'Ya existe una cuenta con este correo electrónico.',
+  REGISTRATION_FAILED: 'No se pudo completar el registro. Intenta de nuevo.',
+  INSUFFICIENT_PERMISSIONS: 'No tienes permisos para realizar esta acción.',
+  UNAUTHORIZED: 'Debes iniciar sesión para continuar.',
 }
 
 // === UTILIDADES ===
@@ -151,6 +181,64 @@ function handleNetworkError(error: any): never {
 // === SERVICIO DE AUTENTICACIÓN ===
 export const authService = {
   /**
+   * Registro de usuario tipo rider (pasajero)
+   * Solo los riders se registran desde la app móvil principal
+   */
+  async registerRider(data: RegisterRiderData): Promise<AuthResponse> {
+    console.log('[AUTH] Iniciando registro de rider...')
+    console.log('[AUTH] URL:', `${API_URL}/auth/register/rider`)
+
+    // Sanitizar datos
+    const sanitizedData = {
+      email: sanitizeInput(data.email.toLowerCase().trim()),
+      password: data.password.trim(),
+      name: sanitizeInput(data.name.trim()),
+      phone: data.phone ? sanitizeInput(data.phone.trim()) : undefined,
+      specialDiscount: data.specialDiscount || 'none',
+    }
+
+    console.log('[AUTH] Email:', maskEmail(sanitizedData.email))
+    console.log('[AUTH] Nombre:', sanitizedData.name)
+
+    try {
+      const response = await fetchWithTimeout(`${API_URL}/auth/register/rider`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sanitizedData),
+      })
+
+      const json = await parseJsonSafe(response)
+      console.log('[AUTH] Response status:', response.status)
+
+      if (!response.ok) {
+        // Mapear error específico de email duplicado
+        if (response.status === 409 || json?.error?.toLowerCase().includes('email in use')) {
+          throw createAuthError('EMAIL_IN_USE', json?.error || 'Email ya registrado')
+        }
+        
+        const errorCode = mapHttpStatusToErrorCode(response.status, json)
+        const technicalMessage = json?.error || json?.message || `HTTP ${response.status}`
+        console.error(`[AUTH] Registro falló: ${technicalMessage}`)
+        throw createAuthError(errorCode, technicalMessage)
+      }
+
+      // Validar respuesta del servidor
+      if (!json?.token || !json?.user) {
+        console.error('[AUTH] Respuesta del servidor incompleta')
+        throw createAuthError('REGISTRATION_FAILED', 'Respuesta del servidor incompleta')
+      }
+
+      console.log('[AUTH] Registro exitoso! ID:', json.user.id)
+      return json as AuthResponse
+    } catch (error: any) {
+      if (error.code && error.userMessage) {
+        throw error
+      }
+      handleNetworkError(error)
+    }
+  },
+
+  /**
    * Login unificado - el backend detecta el rol automáticamente
    */
   async login(data: LoginData): Promise<AuthResponse> {
@@ -242,5 +330,127 @@ export const authService = {
       return msg
     }
     return ERROR_MESSAGES.UNKNOWN_ERROR
+  },
+
+  /**
+   * Registro de conductor (solo para admins)
+   * Requiere token de administrador en el header
+   */
+  async registerDriver(data: RegisterDriverData, adminToken: string): Promise<AuthResponse> {
+    console.log('[AUTH] Iniciando registro de driver (admin)...')
+    console.log('[AUTH] URL:', `${API_URL}/auth/register/driver`)
+
+    const sanitizedData = {
+      email: sanitizeInput(data.email.toLowerCase().trim()),
+      password: data.password.trim(),
+      name: sanitizeInput(data.name.trim()),
+      phone: sanitizeInput(data.phone.trim()),
+      licenseNumber: sanitizeInput(data.licenseNumber.trim()),
+      vehiclePlate: sanitizeInput(data.vehiclePlate.trim().toUpperCase()),
+      vehicleModel: data.vehicleModel ? sanitizeInput(data.vehicleModel.trim()) : undefined,
+    }
+
+    console.log('[AUTH] Email conductor:', maskEmail(sanitizedData.email))
+
+    try {
+      const response = await fetchWithTimeout(`${API_URL}/auth/register/driver`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify(sanitizedData),
+      })
+
+      const json = await parseJsonSafe(response)
+      console.log('[AUTH] Response status:', response.status)
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw createAuthError('UNAUTHORIZED', json?.error || 'Token inválido')
+        }
+        if (response.status === 403) {
+          throw createAuthError('INSUFFICIENT_PERMISSIONS', json?.error || 'Sin permisos')
+        }
+        if (response.status === 409 || json?.error?.toLowerCase().includes('email in use')) {
+          throw createAuthError('EMAIL_IN_USE', json?.error || 'Email ya registrado')
+        }
+        
+        const errorCode = mapHttpStatusToErrorCode(response.status, json)
+        throw createAuthError(errorCode, json?.error || `HTTP ${response.status}`)
+      }
+
+      if (!json?.token || !json?.user) {
+        throw createAuthError('REGISTRATION_FAILED', 'Respuesta del servidor incompleta')
+      }
+
+      console.log('[AUTH] Driver registrado! ID:', json.user.id)
+      return json as AuthResponse
+    } catch (error: any) {
+      if (error.code && error.userMessage) {
+        throw error
+      }
+      handleNetworkError(error)
+    }
+  },
+
+  /**
+   * Registro de administrador (solo para admins existentes)
+   * Requiere token de administrador en el header
+   */
+  async registerAdmin(data: RegisterAdminData, adminToken: string): Promise<AuthResponse> {
+    console.log('[AUTH] Iniciando registro de admin (admin)...')
+    console.log('[AUTH] URL:', `${API_URL}/auth/register/admin`)
+
+    const sanitizedData = {
+      email: sanitizeInput(data.email.toLowerCase().trim()),
+      password: data.password.trim(),
+      name: sanitizeInput(data.name.trim()),
+      phone: sanitizeInput(data.phone.trim()),
+      department: data.department ? sanitizeInput(data.department.trim()) : undefined,
+    }
+
+    console.log('[AUTH] Email admin:', maskEmail(sanitizedData.email))
+
+    try {
+      const response = await fetchWithTimeout(`${API_URL}/auth/register/admin`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify(sanitizedData),
+      })
+
+      const json = await parseJsonSafe(response)
+      console.log('[AUTH] Response status:', response.status)
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw createAuthError('UNAUTHORIZED', json?.error || 'Token inválido')
+        }
+        if (response.status === 403) {
+          throw createAuthError('INSUFFICIENT_PERMISSIONS', json?.error || 'Sin permisos')
+        }
+        if (response.status === 409 || json?.error?.toLowerCase().includes('email in use')) {
+          throw createAuthError('EMAIL_IN_USE', json?.error || 'Email ya registrado')
+        }
+        
+        const errorCode = mapHttpStatusToErrorCode(response.status, json)
+        throw createAuthError(errorCode, json?.error || `HTTP ${response.status}`)
+      }
+
+      if (!json?.token || !json?.user) {
+        throw createAuthError('REGISTRATION_FAILED', 'Respuesta del servidor incompleta')
+      }
+
+      console.log('[AUTH] Admin registrado! ID:', json.user.id)
+      return json as AuthResponse
+    } catch (error: any) {
+      if (error.code && error.userMessage) {
+        throw error
+      }
+      handleNetworkError(error)
+    }
   },
 }
