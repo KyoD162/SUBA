@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 
 export type DriverTabParamList = {
   Trip: undefined
+  ScanTicket: undefined
   DriverProfile: undefined
   CargarPasajero: undefined
 }
@@ -14,6 +15,7 @@ export type AdminTabParamList = {
   Conductores: undefined
   Usuarios: undefined
   Precios: undefined
+  TicketTypes: undefined
   AdminProfile: undefined
 }
 
@@ -23,9 +25,11 @@ export type RootStackParamList = {
   DriverMain: NavigatorScreenParams<DriverTabParamList>
   AdminMain: NavigatorScreenParams<AdminTabParamList>
   RouteDetail: { routeId: string }
-  PaymentCheckout: { packageId: string }
+  PaymentCheckout: { packageId?: string }
+  TicketDetail: { ticketId: string }
   Register: undefined
   EditProfile: undefined
+  LiveTracking: { routeId: string }
 }
 
 export type MainTabParamList = {

@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, TextInput, Dimensions, useWindowDimensions } from "react-native"
+import { useMemo, useState, useEffect } from "react"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, TextInput, Dimensions, useWindowDimensions, ActivityIndicator, Alert, Modal } from "react-native"
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from "../../theme"
@@ -10,18 +10,7 @@ import { useTickets } from "../../navigation/TicketsContext"
 import { useRoute, useNavigation } from "@react-navigation/native"
 import type { RootStackParamList } from "../../navigation/types"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
-
-interface TicketPackage {
-  id: string
-  name: string
-  description: string
-  priceUSD: number
-  value: string
-  trips?: number
-  validity?: string
-  discount?: number
-  popular?: boolean
-}
+import type { TicketType } from "../../services/tickets"
 
 interface PaymentMethod {
   id: string
@@ -31,45 +20,6 @@ interface PaymentMethod {
   lastDigits?: string
   isPrimary?: boolean
 }
-
-const UNIT_PRICE_USD = 0.5
-
-const ticketPackages: TicketPackage[] = [
-  {
-    id: "1",
-    name: "Viaje Sencillo",
-    description: "Un viaje válido por una hora",
-    priceUSD: 0.5,
-    value: "Un viaje",
-    validity: "1 hora",
-  },
-  {
-    id: "2",
-    name: "Paquete 10 Viajes",
-    description: "Perfecto para viajeros frecuentes",
-    priceUSD: 4.5,
-    value: "10 viajes",
-    trips: 10,
-    discount: 10,
-    popular: true,
-  },
-  {
-    id: "3",
-    name: "Mensual Ilimitado",
-    description: "Acceso ilimitado por todo un mes",
-    priceUSD: 12.0,
-    value: "Ilimitado",
-    validity: "30 días",
-    discount: 20,
-  },
-  {
-    id: "custom",
-    name: "Paquete Personalizado",
-    description: "Elige cuántos viajes quieres",
-    priceUSD: 0, // dinámico según cantidad
-    value: "Personalizado",
-  },
-]
 
 const paymentMethods: PaymentMethod[] = [
   {
@@ -96,16 +46,58 @@ const paymentMethods: PaymentMethod[] = [
   },
 ]
 
+// Fallback ticket types when backend is not available
+const fallbackTicketTypes: TicketType[] = [
+  {
+    _id: 'fallback-1',
+    name: 'Viaje Sencillo',
+    description: 'Un solo viaje en cualquier ruta de SUBA.',
+    category: 'single',
+    price: 0.50,
+    usageLimit: 1,
+    durationMinutes: null,
+    color: '#0891B2',
+    icon: 'ticket',
+    isActive: true,
+  },
+  {
+    _id: 'fallback-2',
+    name: 'Paquete 10 Viajes',
+    description: 'Perfecto para viajeros frecuentes. Ahorra un 10%.',
+    category: 'multi',
+    price: 4.50,
+    usageLimit: 10,
+    durationMinutes: null,
+    color: '#059669',
+    icon: 'layers',
+    isActive: true,
+  },
+  {
+    _id: 'fallback-3',
+    name: 'Pase Mensual',
+    description: 'Viajes ilimitados durante 30 días.',
+    category: 'time_based',
+    price: 15.00,
+    usageLimit: null,
+    durationMinutes: 43200, // 30 days
+    color: '#7C3AED',
+    icon: 'calendar',
+    isActive: true,
+  },
+]
+
 export default function PaymentCheckoutScreen() {
-  const { purchasePass } = useTickets()
+  const { purchasePass, availableTicketTypes, refreshTicketTypes, isPurchasing } = useTickets()
   const route = useRoute()
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
-  const initialPackage = (route.params as RootStackParamList["PaymentCheckout"] | undefined)?.packageId || "2"
-  const [selectedPackage, setSelectedPackage] = useState<string>(initialPackage)
+  const [selectedPackage, setSelectedPackage] = useState<string>("")
   const [selectedPayment, setSelectedPayment] = useState<string>("1")
   const [isProcessing, setIsProcessing] = useState(false)
   const [promoCode, setPromoCode] = useState("")
-  const [customTrips, setCustomTrips] = useState<number>(5)
+  const [isLoadingTypes, setIsLoadingTypes] = useState(true)
+  const [useFallback, setUseFallback] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [purchasedTicketName, setPurchasedTicketName] = useState('')
   const { width: screenWidth } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   // Slightly smaller than screen width to avoid edge clipping and feel like a carousel
@@ -116,62 +108,110 @@ export default function PaymentCheckoutScreen() {
   const leftPad = Math.max(SPACING.sm, sidePad - SPACING.md)
   const rightPad = Math.max(SPACING.sm, sidePad)
 
-  const currentPackage = ticketPackages.find((p) => p.id === selectedPackage)
+  // Use backend types or fallback
+  const ticketTypesToShow = useMemo(() => {
+    if (availableTicketTypes.length > 0) return availableTicketTypes
+    if (useFallback) return fallbackTicketTypes
+    return []
+  }, [availableTicketTypes, useFallback])
+
+  // Load ticket types on mount
+  useEffect(() => {
+    const loadTypes = async () => {
+      setIsLoadingTypes(true)
+      try {
+        await refreshTicketTypes()
+        // If still no types after loading, use fallback
+        if (availableTicketTypes.length === 0) {
+          setUseFallback(true)
+        }
+      } catch {
+        setUseFallback(true)
+      } finally {
+        setIsLoadingTypes(false)
+      }
+    }
+    loadTypes()
+  }, [refreshTicketTypes])
+
+  // Set default selection when types are loaded
+  useEffect(() => {
+    if (ticketTypesToShow.length > 0 && !selectedPackage) {
+      // Try to find a "popular" multi-use package, otherwise select first
+      const popularPackage = ticketTypesToShow.find(t => t.category === 'multi')
+      setSelectedPackage(popularPackage?._id || ticketTypesToShow[0]._id)
+    }
+  }, [ticketTypesToShow, selectedPackage])
+
+  const currentPackage = ticketTypesToShow.find((p) => p._id === selectedPackage)
   const currentPayment = paymentMethods.find((p) => p.id === selectedPayment)
-
-  const customDiscount = useMemo(() => {
-    if (customTrips >= 20) return 15
-    if (customTrips >= 10) return 10
-    return 0
-  }, [customTrips])
-
-  const customTotal = useMemo(() => {
-    let total = UNIT_PRICE_USD * customTrips
-    if (customDiscount > 0) total = total * (1 - customDiscount / 100)
-    return total
-  }, [customTrips, customDiscount])
+  const isFallbackPurchase = selectedPackage.startsWith('fallback-')
 
   const handlePurchase = async () => {
+    if (!selectedPackage) {
+      Alert.alert('Error', 'Por favor selecciona un tipo de ticket')
+      return
+    }
+    
+    // If using fallback, show message that backend is unavailable
+    if (isFallbackPurchase) {
+      Alert.alert(
+        'Servicio no disponible',
+        'El servicio de compra no está disponible en este momento. Por favor intenta más tarde.',
+        [{ text: 'OK' }]
+      )
+      return
+    }
+    
     setIsProcessing(true)
-    setTimeout(() => {
-      // Decide product type based on selection
-      if (selectedPackage === "1") {
-        purchasePass({ kind: "single", priceUSD: 0.5 })
-      } else if (selectedPackage === "3") {
-        purchasePass({ kind: "unlimited", priceUSD: 12.0 })
-      } else if (selectedPackage === "custom") {
-        purchasePass({ kind: "bundle", trips: customTrips, priceUSD: customTotal })
-      } else {
-        // id "2" default 10 trips
-        purchasePass({ kind: "bundle", trips: 10, priceUSD: currentPackage?.priceUSD || 0 })
-      }
+    try {
+      await purchasePass(selectedPackage)
+      setPurchasedTicketName(currentPackage?.name || 'Ticket')
+      setShowSuccessModal(true)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'No se pudo completar la compra'
+      Alert.alert('Error', message)
+    } finally {
       setIsProcessing(false)
-      navigation.goBack()
-    }, 1200)
+    }
+  }
+
+  const handleGoToTickets = () => {
+    setShowSuccessModal(false)
+    navigation.navigate('MainTabs', { screen: 'Tickets' } as never)
   }
 
   const calculateTotal = () => {
-    let total = 0
-    if (selectedPackage === "custom") {
-      total = customTotal
-    } else if (currentPackage) {
-      total = currentPackage.priceUSD
-      if (currentPackage.discount) {
-        total = total * (1 - currentPackage.discount / 100)
-      }
-    }
+    if (!currentPackage) return 0
+    let total = currentPackage.price
     if (promoCode === "SUBA2024") total = total * 0.9
     return total
   }
 
-  const PackageCard = ({ pkg }: { pkg: TicketPackage }) => {
-    const isSelected = selectedPackage === pkg.id
+  const getCategoryLabel = (category: string): string => {
+    switch (category) {
+      case 'single': return 'Uso único'
+      case 'multi': return 'Múltiples usos'
+      case 'time_based': return 'Por tiempo'
+      default: return category
+    }
+  }
+
+  const formatDuration = (minutes: number): string => {
+    if (minutes < 60) return `${minutes} min`
+    if (minutes < 1440) return `${Math.floor(minutes / 60)} horas`
+    return `${Math.floor(minutes / 1440)} días`
+  }
+
+  const PackageCard = ({ pkg }: { pkg: TicketType }) => {
+    const isSelected = selectedPackage === pkg._id
+    const isPopular = pkg.category === 'multi'
     return (
       <TouchableOpacity
         activeOpacity={0.9}
         style={[
           styles.packageCard,
-          { width: cardWidth },
+          { width: cardWidth, borderLeftColor: pkg.color, borderLeftWidth: 4 },
           isSelected && styles.packageCardSelected,
           {
             transform: [{ scale: isSelected ? 1 : 0.96 }],
@@ -179,9 +219,9 @@ export default function PaymentCheckoutScreen() {
             elevation: isSelected ? 6 : 2,
           },
         ]}
-        onPress={() => setSelectedPackage(pkg.id)}
+        onPress={() => setSelectedPackage(pkg._id)}
       >
-      {pkg.popular && (
+      {isPopular && (
         <View style={styles.popularBadge}>
           <Badge label="Más popular" variant="success" size="sm" />
         </View>
@@ -194,7 +234,7 @@ export default function PaymentCheckoutScreen() {
         </View>
         <View style={styles.packagePriceContainer}>
           <CurrencyDisplay
-            usdAmount={pkg.id === "custom" ? customTotal : pkg.priceUSD}
+            usdAmount={pkg.price}
             size="md"
           />
         </View>
@@ -204,42 +244,32 @@ export default function PaymentCheckoutScreen() {
         <View style={styles.featureRow}>
           <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.success} />
           <Text style={styles.featureText}>
-            {pkg.id === "custom" ? `${customTrips} viaje${customTrips !== 1 ? "s" : ""}` : pkg.value}
+            {pkg.category === 'single' 
+              ? '1 viaje' 
+              : pkg.category === 'multi' && pkg.usageLimit 
+                ? `${pkg.usageLimit} viajes` 
+                : 'Viajes ilimitados'}
           </Text>
         </View>
 
-        {pkg.validity && (
+        <View style={styles.featureRow}>
+          <Ionicons name="layers-outline" size={16} color={COLORS.success} />
+          <Text style={styles.featureText}>{getCategoryLabel(pkg.category)}</Text>
+        </View>
+
+        {pkg.durationMinutes && (
           <View style={styles.featureRow}>
             <Ionicons name="time-outline" size={16} color={COLORS.success} />
-            <Text style={styles.featureText}>Válido por {pkg.validity}</Text>
-          </View>
-        )}
-
-        {pkg.discount && (
-          <View style={styles.featureRow}>
-            <Ionicons name="gift-outline" size={16} color={COLORS.success} />
-            <Text style={styles.featureText}>Ahorra {pkg.discount}%</Text>
-          </View>
-        )}
-
-        {pkg.id === "custom" && (
-          <View style={[styles.featureRow, { justifyContent: "space-between", marginTop: SPACING.sm }]}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: SPACING.sm }}>
-              <Ionicons name="pricetag-outline" size={16} color={COLORS.success} />
-              <Text style={styles.featureText}>Precio base ${UNIT_PRICE_USD.toFixed(2)} USD por viaje</Text>
-            </View>
-            {customDiscount > 0 && (
-              <Badge label={`-${customDiscount}%`} variant="success" size="sm" />
-            )}
+            <Text style={styles.featureText}>Válido por {formatDuration(pkg.durationMinutes)}</Text>
           </View>
         )}
       </View>
 
-      <View style={[styles.selectIndicator, selectedPackage === pkg.id && styles.selectIndicatorActive]}>
+      <View style={[styles.selectIndicator, isSelected && styles.selectIndicatorActive]}>
         <Ionicons
-          name={selectedPackage === pkg.id ? "radio-button-on" : "radio-button-off"}
+          name={isSelected ? "radio-button-on" : "radio-button-off"}
           size={24}
-          color={selectedPackage === pkg.id ? COLORS.primary : COLORS.textTertiary}
+          color={isSelected ? COLORS.primary : COLORS.textTertiary}
         />
       </View>
       </TouchableOpacity>
@@ -291,48 +321,46 @@ export default function PaymentCheckoutScreen() {
         {/* Package Selection - Horizontal Carousel */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Selecciona tu paquete</Text>
-          <FlatList
-            data={ticketPackages}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToAlignment="start"
-            decelerationRate="fast"
-            snapToInterval={cardWidth + SPACING.md}
-            contentContainerStyle={{ paddingLeft: leftPad, paddingRight: rightPad }}
-            renderItem={({ item }) => <PackageCard pkg={item} />}
-            ItemSeparatorComponent={() => <View style={{ width: SPACING.md }} />}
-            onMomentumScrollEnd={(e) => {
-              const offsetX = e.nativeEvent.contentOffset.x
-              const visibleOffset = Math.max(0, offsetX - leftPad)
-              const index = Math.round(visibleOffset / (cardWidth + SPACING.md))
-              const target = ticketPackages[index]
-              if (target && target.id !== selectedPackage) setSelectedPackage(target.id)
-            }}
-          />
-
-          {selectedPackage === "custom" && (
-            <Card variant="outlined" style={styles.customSelector}>
-              <Text style={styles.customLabel}>Cantidad de viajes</Text>
-              <View style={styles.stepperRow}>
-                <TouchableOpacity
-                  style={styles.stepperButton}
-                  onPress={() => setCustomTrips((n) => Math.max(1, n - 1))}
-                >
-                  <Ionicons name="remove" size={20} color={COLORS.text} />
-                </TouchableOpacity>
-                <Text style={styles.customValue}>{customTrips}</Text>
-                <TouchableOpacity
-                  style={styles.stepperButton}
-                  onPress={() => setCustomTrips((n) => Math.min(100, n + 1))}
-                >
-                  <Ionicons name="add" size={20} color={COLORS.text} />
-                </TouchableOpacity>
-              </View>
-              {customDiscount > 0 && (
-                <Text style={styles.customHint}>Descuento aplicado: {customDiscount}%</Text>
-              )}
-            </Card>
+          {isLoadingTypes ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={styles.loadingText}>Cargando tipos de ticket...</Text>
+            </View>
+          ) : availableTicketTypes.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="ticket-outline" size={48} color={COLORS.textTertiary} />
+              <Text style={styles.emptyText}>No hay tipos de ticket disponibles</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={availableTicketTypes}
+              keyExtractor={(item) => item._id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToAlignment="start"
+              decelerationRate="fast"
+              snapToInterval={cardWidth + SPACING.md}
+              contentContainerStyle={{ paddingLeft: leftPad, paddingRight: rightPad }}
+              renderItem={({ item }) => <PackageCard pkg={item} />}
+              ItemSeparatorComponent={() => <View style={{ width: SPACING.md }} />}
+              onMomentumScrollEnd={(e) => {
+                const offsetX = e.nativeEvent.contentOffset.x
+                const visibleOffset = Math.max(0, offsetX - leftPad)
+                const index = Math.round(visibleOffset / (cardWidth + SPACING.md))
+                const target = ticketTypesToShow[index]
+                if (target && target._id !== selectedPackage) setSelectedPackage(target._id)
+              }}
+            />
+          )}
+          
+          {/* Fallback notice */}
+          {useFallback && (
+            <View style={styles.fallbackNotice}>
+              <Ionicons name="information-circle-outline" size={16} color={COLORS.warning} />
+              <Text style={styles.fallbackNoticeText}>
+                Mostrando opciones de ejemplo. Conecta con el servidor para comprar.
+              </Text>
+            </View>
           )}
         </View>
 
@@ -444,8 +472,47 @@ export default function PaymentCheckoutScreen() {
           style={styles.purchaseButton}
         />
 
-        <Button title="Cancelar" variant="outline" size="lg" style={styles.cancelButton} />
+        <Button title="Cancelar" variant="outline" size="lg" style={styles.cancelButton} onPress={() => navigation.goBack()} />
       </ScrollView>
+
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="checkmark-circle" size={80} color={COLORS.success} />
+            </View>
+            <Text style={styles.modalTitle}>¡Felicidades!</Text>
+            <Text style={styles.modalMessage}>
+              Tu ticket "{purchasedTicketName}" ha sido comprado exitosamente.
+            </Text>
+            <Text style={styles.modalSubtext}>
+              Ya puedes ver tu código QR en la sección de tickets.
+            </Text>
+            <Button
+              title="Ver mis tickets"
+              variant="primary"
+              size="lg"
+              onPress={handleGoToTickets}
+              style={styles.modalButton}
+            />
+            <TouchableOpacity 
+              style={styles.modalSecondaryButton}
+              onPress={() => {
+                setShowSuccessModal(false)
+                navigation.goBack()
+              }}
+            >
+              <Text style={styles.modalSecondaryText}>Comprar otro</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -718,5 +785,89 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     marginBottom: SPACING.xl,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING.xl,
+  },
+  loadingText: {
+    ...TEXT_STYLES.body,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.md,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING.xl,
+  },
+  emptyText: {
+    ...TEXT_STYLES.body,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.md,
+    textAlign: 'center',
+  },
+  fallbackNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.warning + '20',
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    marginTop: SPACING.md,
+    gap: SPACING.sm,
+  },
+  fallbackNoticeText: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.warning,
+    flex: 1,
+  },
+  // Success Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.xl,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+  },
+  modalIconContainer: {
+    marginBottom: SPACING.lg,
+  },
+  modalTitle: {
+    ...TEXT_STYLES.h2,
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    ...TEXT_STYLES.body,
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: SPACING.xs,
+  },
+  modalSubtext: {
+    ...TEXT_STYLES.bodySm,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: SPACING.xl,
+  },
+  modalButton: {
+    width: '100%',
+    marginBottom: SPACING.md,
+  },
+  modalSecondaryButton: {
+    paddingVertical: SPACING.sm,
+  },
+  modalSecondaryText: {
+    ...TEXT_STYLES.body,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
 })

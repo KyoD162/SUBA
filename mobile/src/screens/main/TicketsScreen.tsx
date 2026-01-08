@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Dimensions } from "react-native"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Dimensions, RefreshControl } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from "../../theme"
@@ -15,9 +15,10 @@ import { useTickets } from "../../navigation/TicketsContext"
 
 export default function TicketsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
-  const { currentPass, history } = useTickets()
+  const { currentPass, tickets, history, isLoading, refreshTickets } = useTickets()
   const [activeTab, setActiveTab] = useState<"passes" | "history">("passes")
   const [expandedQR, setExpandedQR] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   const screenWidth = Dimensions.get("window").width
   // Reduce QR footprint for a more compact modern card
@@ -149,7 +150,7 @@ export default function TicketsScreen() {
                   validUntil: currentPass.validUntil,
                   tripsRemaining: currentPass.tripsRemaining,
                   status: currentPass.status,
-                  color: COLORS.success,
+                  color: currentPass.color || COLORS.success,
                 }}
               />
             ) : (
@@ -167,6 +168,34 @@ export default function TicketsScreen() {
                   />
                 </View>
               </Card>
+            )}
+
+            {/* All Active Tickets */}
+            {tickets.length > 1 && (
+              <View style={styles.allTicketsSection}>
+                <Text style={styles.sectionTitle}>Todos mis tickets activos</Text>
+                {tickets.map(ticket => (
+                  <TouchableOpacity 
+                    key={ticket.id} 
+                    onPress={() => navigation.navigate('TicketDetail', { ticketId: ticket.id })}
+                  >
+                    <Card style={[styles.ticketMiniCard, { borderLeftColor: ticket.color, borderLeftWidth: 4 }]}>
+                      <View style={styles.ticketMiniContent}>
+                        <View>
+                          <Text style={styles.ticketMiniType}>{ticket.type}</Text>
+                          <Text style={styles.ticketMiniNumber}>{ticket.ticketNumber}</Text>
+                        </View>
+                        <View style={styles.ticketMiniRight}>
+                          <Text style={styles.ticketMiniRemaining}>
+                            {ticket.tripsRemaining === 'unlimited' ? '∞' : ticket.tripsRemaining}
+                          </Text>
+                          <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
+                        </View>
+                      </View>
+                    </Card>
+                  </TouchableOpacity>
+                ))}
+              </View>
             )}
 
             {/* Purchase New Pass */}
@@ -433,5 +462,41 @@ const styles = StyleSheet.create({
   emptyText: {
     ...TEXT_STYLES.body,
     color: COLORS.textSecondary,
+  },
+  allTicketsSection: {
+    marginBottom: SPACING.lg,
+  },
+  sectionTitle: {
+    ...TEXT_STYLES.subtitle,
+    color: COLORS.text,
+    marginBottom: SPACING.md,
+  },
+  ticketMiniCard: {
+    marginBottom: SPACING.sm,
+    padding: SPACING.md,
+  },
+  ticketMiniContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ticketMiniType: {
+    ...TEXT_STYLES.body,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  ticketMiniNumber: {
+    ...TEXT_STYLES.caption,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  ticketMiniRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  ticketMiniRemaining: {
+    ...TEXT_STYLES.subtitle,
+    color: COLORS.primary,
   },
 })
