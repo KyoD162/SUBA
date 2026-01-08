@@ -1,15 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { API_URL, apiFetch } from '../services/api'
+import type { UserRole, UserData } from '../services/auth'
 
-type UserRole = 'rider' | 'driver' | 'admin'
-
-interface UserData {
-  id: string
-  email: string
-  role: UserRole
-  name?: string
-}
+// Constantes para las claves de almacenamiento
+const STORAGE_KEYS = {
+  TOKEN: 'auth_token',
+  REFRESH_TOKEN: 'auth_refresh_token',
+  USER: 'auth_user',
+} as const
 
 type AuthContextValue = {
   isAuthenticated: boolean
@@ -45,9 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadStorageData = async () => {
     try {
-      const storedToken = await AsyncStorage.getItem('auth_token')
-      const storedRefreshToken = await AsyncStorage.getItem('auth_refresh_token')
-      const storedUser = await AsyncStorage.getItem('auth_user')
+      const storedToken = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN)
+      const storedRefreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+      const storedUser = await AsyncStorage.getItem(STORAGE_KEYS.USER)
       
       if (storedToken && storedUser) {
         setToken(storedToken)
@@ -61,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (e) {
-      console.error('Failed to load auth data', e)
+      console.error('[AUTH] Failed to load auth data', e)
     } finally {
       setIsLoading(false)
     }
@@ -75,46 +74,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const userToSave = { ...newUser, role: normalizedRole }
 
-      await AsyncStorage.setItem('auth_token', newToken)
-      await AsyncStorage.setItem('auth_refresh_token', newRefreshToken)
-      await AsyncStorage.setItem('auth_user', JSON.stringify(userToSave))
+      await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, newToken)
+      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken)
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userToSave))
       setToken(newToken)
       setRefreshTokenState(newRefreshToken)
       setUser(userToSave)
+      console.log('[AUTH] SignIn exitoso, rol:', normalizedRole)
     } catch (e) {
-      console.error('Failed to save auth data', e)
+      console.error('[AUTH] Failed to save auth data', e)
+      throw e // Re-throw para que el componente que llama pueda manejarlo
     }
   }
 
   const signOut = async () => {
+    console.log('[AUTH] Iniciando signOut...')
     // Flujo secuencial (best-effort backend -> limpieza storage -> limpieza memoria)
     try {
       try {
         // No bloquea el logout local si falla el backend.
         await apiFetch(`${API_URL}/auth/logout`, {
           method: 'POST',
-          // El backend actual no requiere body, pero lo dejamos listo para futuros refresh tokens revocables.
           body: JSON.stringify({ refreshToken: refreshTokenState }),
         })
       } catch (e) {
         // Ignorar: aun si hay problema de red / token expirado, se elimina el estado local.
+        console.log('[AUTH] Backend logout falló (ignorado):', e)
       }
 
-      await AsyncStorage.multiRemove(['auth_token', 'auth_refresh_token', 'auth_user'])
+      await AsyncStorage.multiRemove([STORAGE_KEYS.TOKEN, STORAGE_KEYS.REFRESH_TOKEN, STORAGE_KEYS.USER])
     } catch (e) {
       // Fallback: intentar individualmente
       try {
-        await AsyncStorage.removeItem('auth_token')
-        await AsyncStorage.removeItem('auth_refresh_token')
-        await AsyncStorage.removeItem('auth_user')
+        await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN)
+        await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+        await AsyncStorage.removeItem(STORAGE_KEYS.USER)
       } catch (inner) {
-        console.error('Failed to remove auth data', inner)
+        console.error('[AUTH] Failed to remove auth data', inner)
       }
     } finally {
       // Garantizar limpieza en memoria aunque el storage falle.
       setToken(null)
       setRefreshTokenState(null)
       setUser(null)
+      console.log('[AUTH] SignOut completado')
     }
   }
 
@@ -122,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!refreshTokenState) return false
     
     try {
+      console.log('[AUTH] Intentando refrescar token...')
       const response = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -131,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const json = await response.json()
       
       if (response.ok && json.token) {
-        await AsyncStorage.setItem('auth_token', json.token)
+        await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, json.token)
         setToken(json.token)
         if (json.user) {
           const normalizedRole = normalizeRole(json.user.role)
@@ -141,16 +145,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           const normalizedUser = { ...json.user, role: normalizedRole }
           setUser(normalizedUser)
-          await AsyncStorage.setItem('auth_user', JSON.stringify(normalizedUser))
+          await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(normalizedUser))
         }
+        console.log('[AUTH] Token refrescado exitosamente')
         return true
       }
       
       // Si el refresh token expiró, cerrar sesión
+      console.log('[AUTH] Refresh token expirado, cerrando sesión')
       await signOut()
       return false
     } catch (e) {
-      console.error('Failed to refresh token', e)
+      console.error('[AUTH] Failed to refresh token', e)
       return false
     }
   }

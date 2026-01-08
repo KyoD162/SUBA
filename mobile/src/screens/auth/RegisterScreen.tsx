@@ -61,6 +61,21 @@ export default function RegisterScreen() {
     password: '',
     confirmPassword: ''
   })
+  
+  // Estado del toast para mensajes de error/éxito
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'error' | 'success' | 'info' }>({
+    visible: false,
+    message: '',
+    type: 'error',
+  })
+
+  const showToast = (message: string, type: 'error' | 'success' | 'info' = 'error') => {
+    setToast({ visible: true, message, type })
+  }
+
+  const hideToast = () => {
+    setToast(prev => ({ ...prev, visible: false }))
+  }
 
   // Validación del paso actual con feedback visual
   const validateCurrentStep = (): boolean => {
@@ -202,13 +217,17 @@ export default function RegisterScreen() {
       const response = await authService.registerRider(registrationData);
       console.log('[REGISTER SCREEN] Respuesta recibida:', JSON.stringify(response, null, 2));
       
+      // Mostrar toast de éxito
+      showToast('¡Cuenta creada exitosamente!', 'success')
+      
       // response contains { token, refreshToken, user: { id, email, role, name } }
       console.log('[REGISTER SCREEN] Llamando a signIn...');
       await signIn(response.token, response.refreshToken, response.user);
       console.log('[REGISTER SCREEN] signIn completado!');
+      // La navegación se maneja automáticamente por AuthContext
     } catch (error: any) {
       console.error('[REGISTER SCREEN] Error:', error?.message || error);
-      alert(authService.getErrorMessage(error));
+      showToast(authService.getErrorMessage(error), 'error');
     } finally {
       console.log('[REGISTER SCREEN] Finalizando, setLoading(false)');
       setLoading(false)
@@ -486,8 +505,71 @@ export default function RegisterScreen() {
     </View>
   )
 
+  // Componente Toast simple para mostrar mensajes
+  const Toast = () => {
+    const translateY = useRef(new Animated.Value(-100)).current
+    const opacity = useRef(new Animated.Value(0)).current
+
+    useEffect(() => {
+      if (toast.visible) {
+        Animated.parallel([
+          Animated.timing(translateY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start()
+
+        const timer = setTimeout(hideToast, 4000)
+        return () => clearTimeout(timer)
+      } else {
+        Animated.parallel([
+          Animated.timing(translateY, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start()
+      }
+    }, [toast.visible])
+
+    if (!toast.visible) return null
+
+    const bgColor = toast.type === 'error' ? COLORS.error : toast.type === 'success' ? COLORS.success : COLORS.primary
+
+    return (
+      <Animated.View
+        style={[
+          styles.toastContainer,
+          { backgroundColor: bgColor, transform: [{ translateY }], opacity }
+        ]}
+      >
+        <Ionicons
+          name={toast.type === 'error' ? 'alert-circle' : toast.type === 'success' ? 'checkmark-circle' : 'information-circle'}
+          size={24}
+          color={COLORS.textInverse}
+        />
+        <Text style={styles.toastMessage}>{toast.message}</Text>
+        <TouchableOpacity onPress={hideToast}>
+          <Ionicons name="close" size={20} color={COLORS.textInverse} />
+        </TouchableOpacity>
+      </Animated.View>
+    )
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <Toast />
       <Header />
       {/* Hero banner */}
       <View style={styles.heroContainer}>
@@ -865,5 +947,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: SPACING.sm,
+  },
+  // Toast styles
+  toastContainer: {
+    position: 'absolute',
+    top: 50,
+    left: SPACING.md,
+    right: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    gap: SPACING.sm,
+  },
+  toastMessage: {
+    flex: 1,
+    color: COLORS.textInverse,
+    ...TEXT_STYLES.bodySm,
+    fontWeight: '500',
   },
 })

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { auth } from '../middlewares/auth';
+import { auth, requireRole } from '../middlewares/auth';
 import { authLimiter, refreshTokenLimiter } from '../middlewares/rateLimiter';
 import { 
   login,
@@ -14,10 +14,16 @@ export const authRouter = Router();
 // Login unificado (detecta rol automáticamente)
 authRouter.post('/login', authLimiter, login);
 
-// Registro por tipo de usuario
+// === REGISTRO POR TIPO DE USUARIO ===
+
+// Riders: Registro público (desde la app móvil)
 authRouter.post('/register/rider', authLimiter, registerRider);
-authRouter.post('/register/driver', authLimiter, registerDriver);
-authRouter.post('/register/admin', authLimiter, registerAdmin);
+
+// Drivers: Solo admins pueden registrar conductores
+authRouter.post('/register/driver', authLimiter, auth(true), requireRole(['admin']), registerDriver);
+
+// Admins: Solo admins pueden crear otros admins
+authRouter.post('/register/admin', authLimiter, auth(true), requireRole(['admin']), registerAdmin);
 
 // Token refresh
 authRouter.post('/refresh', refreshTokenLimiter, refreshToken);

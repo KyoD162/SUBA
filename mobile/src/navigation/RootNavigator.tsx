@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
@@ -165,20 +165,34 @@ function AdminTabNavigator() {
 }
 
 function NavigationContent() {
-  const { isAuthenticated, user, isLoading } = useAuth()
-
-  if (isAuthenticated) {
-    console.log('[NAV] Usuario autenticado con rol:', user?.role)
-  } else {
-    console.log('[NAV] Usuario no autenticado, mostrando flujo Auth')
-  }
-
-  if (isLoading) {
-    // Podríamos mostrar un splash screen aquí
-    return null
-  }
+  const { isAuthenticated, user, isLoading, signOut } = useAuth()
 
   const role = user?.role
+  const hasInvalidRole = isAuthenticated && (!role || !['rider', 'driver', 'admin'].includes(role))
+
+  // Si el rol es inválido, cerrar sesión usando useEffect para evitar loops
+  useEffect(() => {
+    if (hasInvalidRole) {
+      console.warn('[NAV] Rol inválido o faltante, cerrando sesión:', role)
+      signOut()
+    }
+  }, [hasInvalidRole, role, signOut])
+
+  // Log del estado de autenticación para debugging
+  if (__DEV__) {
+    if (isAuthenticated && !hasInvalidRole) {
+      console.log('[NAV] Usuario autenticado con rol:', role)
+    } else if (!isAuthenticated) {
+      console.log('[NAV] Usuario no autenticado, mostrando flujo Auth')
+    }
+  }
+
+  // Mostrar pantalla de carga mientras se verifica el estado de autenticación
+  // o mientras se cierra la sesión por rol inválido
+  if (isLoading || hasInvalidRole) {
+    // TODO: Implementar un SplashScreen apropiado
+    return null
+  }
 
   return (
     <NavigationContainer>
@@ -188,40 +202,48 @@ function NavigationContent() {
           animation: "default",
         }}
       >
-        {isAuthenticated ? (
+        {isAuthenticated && role ? (
           <Stack.Group>
-            {role === 'driver' && <Stack.Screen name="DriverMain" component={DriverTabNavigator} />}
-            {role === 'admin' && <Stack.Screen name="AdminMain" component={AdminTabNavigator} />}
-            {role === 'rider' && <Stack.Screen name="MainApp" component={MainTabNavigator} />}
+            {/* Navegador principal según el rol */}
             {role === 'rider' && (
-              <Stack.Screen
-                name="EditProfile"
-                component={require('../screens/main/EditProfileScreen').default}
-                options={{ animation: 'default', contentStyle: { backgroundColor: COLORS.background } }}
-              />
+              <Stack.Screen name="MainApp" component={MainTabNavigator} />
             )}
-            {/* Fallback: si hay token pero rol no coincide, regresamos al login para evitar loops */}
-            {role !== 'driver' && role !== 'admin' && role !== 'rider' && (
-              <Stack.Screen name="Auth" component={LoginScreen} />
+            {role === 'driver' && (
+              <Stack.Screen name="DriverMain" component={DriverTabNavigator} />
             )}
-            <Stack.Screen
-              name="RouteDetail"
-              component={RouteDetailScreen}
-              options={{
-                animation: "default",
-                contentStyle: { backgroundColor: COLORS.background },
-              }}
-            />
-            <Stack.Screen
-              name="PaymentCheckout"
-              component={PaymentCheckoutScreen}
-              options={{
-                animation: "default",
-                contentStyle: { backgroundColor: COLORS.background },
-              }}
-            />
+            {role === 'admin' && (
+              <Stack.Screen name="AdminMain" component={AdminTabNavigator} />
+            )}
+            
+            {/* Pantallas adicionales para riders */}
+            {role === 'rider' && (
+              <>
+                <Stack.Screen
+                  name="EditProfile"
+                  component={require('../screens/main/EditProfileScreen').default}
+                  options={{ animation: 'default', contentStyle: { backgroundColor: COLORS.background } }}
+                />
+                <Stack.Screen
+                  name="RouteDetail"
+                  component={RouteDetailScreen}
+                  options={{
+                    animation: "default",
+                    contentStyle: { backgroundColor: COLORS.background },
+                  }}
+                />
+                <Stack.Screen
+                  name="PaymentCheckout"
+                  component={PaymentCheckoutScreen}
+                  options={{
+                    animation: "default",
+                    contentStyle: { backgroundColor: COLORS.background },
+                  }}
+                />
+              </>
+            )}
           </Stack.Group>
         ) : (
+          // Flujo de autenticación (no autenticado)
           <Stack.Group screenOptions={{ animation: "none" }}>
             <Stack.Screen name="Auth" component={LoginScreen} />
             <Stack.Screen name="Register" component={require("../screens/auth/RegisterScreen").default} />
