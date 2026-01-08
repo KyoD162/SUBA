@@ -12,7 +12,7 @@ import {
   sanitizeString 
 } from '../utils/validation';
 
-// --- REGISTER ---
+// --- REGISTRO ---
 
 export async function registerRider(req: Request, res: Response) {
   console.log('[REGISTER] Iniciando registro de rider...');
@@ -162,7 +162,7 @@ export async function registerAdmin(req: Request, res: Response) {
   }
 }
 
-// --- LOGIN ---
+// --- INICIO DE SESIÓN ---
 
 // Login unificado - detecta el rol automáticamente
 export async function login(req: Request, res: Response) {

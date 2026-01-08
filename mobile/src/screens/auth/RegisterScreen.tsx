@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Animated, Easing, LayoutAnimation, Platform, UIManager } from "react-native"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Animated, Easing } from "react-native"
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES, globalStyles } from "../../theme"
@@ -21,10 +21,16 @@ import {
 
 const totalSteps = 4
 
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true)
-}
+// Componente Field separado para evitar re-creaciones
+const Field = React.memo(({ label, icon, children }: { label: string; icon: keyof typeof Ionicons.glyphMap; children: React.ReactNode }) => (
+  <View style={styles.inputGroup}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={styles.inputContainer}>
+      <Ionicons name={icon} size={20} color={COLORS.textTertiary} />
+      {children}
+    </View>
+  </View>
+))
 
 export default function RegisterScreen() {
   const navigation = useNavigation()
@@ -173,7 +179,6 @@ export default function RegisterScreen() {
     if (!validateCurrentStep()) {
       return
     }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setStep((s) => Math.min(totalSteps, s + 1))
   }
 
@@ -188,7 +193,6 @@ export default function RegisterScreen() {
       password: '',
       confirmPassword: ''
     })
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setStep((s) => Math.max(1, s - 1))
   }
 
@@ -322,16 +326,6 @@ export default function RegisterScreen() {
     </View>
   )
 
-  const Field = ({ label, icon, children }: { label: string; icon: keyof typeof Ionicons.glyphMap; children: React.ReactNode }) => (
-    <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputContainer}>
-        <Ionicons name={icon} size={20} color={COLORS.textTertiary} />
-        {children}
-      </View>
-    </View>
-  )
-
   const discountOptions = [
     { value: 'none', label: 'Ninguno' },
     { value: 'student', label: 'Estudiante' },
@@ -339,7 +333,7 @@ export default function RegisterScreen() {
     { value: 'senior', label: 'Adulto Mayor' },
   ]
 
-  const Step1 = () => (
+  const Step1 = useMemo(() => (
     <View>
       <Text style={styles.sectionTitle}>Datos personales</Text>
       <Field label="Nombre completo" icon="person-outline">
@@ -397,9 +391,9 @@ export default function RegisterScreen() {
         </View>
       </View>
     </View>
-  )
+  ), [fullName, cedula, edad, errors.fullName, errors.cedula, errors.edad, handleFullNameChange, handleCedulaChange, handleEdadChange, specialDiscount])
 
-  const Step2 = () => (
+  const Step2 = useMemo(() => (
     <View>
       <Text style={styles.sectionTitle}>Contacto</Text>
       <Field label="Teléfono" icon="call-outline">
@@ -428,9 +422,9 @@ export default function RegisterScreen() {
       </Field>
       {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
     </View>
-  )
+  ), [telefono, email, errors.telefono, errors.email, handleTelefonoChange, handleEmailChange])
 
-  const Step3 = () => (
+  const Step3 = useMemo(() => (
     <View>
       <Text style={styles.sectionTitle}>Seguridad</Text>
       <Field label="Contraseña" icon="lock-closed-outline">
@@ -472,7 +466,7 @@ export default function RegisterScreen() {
         <Text style={styles.passwordHint}>Usa al menos 6 caracteres. Mezcla letras y números para mayor seguridad.</Text>
       </View>
     </View>
-  )
+  ), [password, confirmPassword, showPassword, showConfirmPassword, errors.password, errors.confirmPassword, handlePasswordChange, handleConfirmPasswordChange])
 
   const DocItem = ({ label, done, onToggle, icon }: { label: string; done: boolean; onToggle: () => void; icon: keyof typeof Ionicons.glyphMap }) => (
     <View style={styles.docItem}>
@@ -489,7 +483,7 @@ export default function RegisterScreen() {
     </View>
   )
 
-  const Step4 = () => (
+  const Step4 = useMemo(() => (
     <View>
       <Text style={styles.sectionTitle}>Verificación de documentos</Text>
       <Text style={styles.sectionSubtitle}>Sube los documentos requeridos para validar tu identidad</Text>
@@ -503,7 +497,7 @@ export default function RegisterScreen() {
         <Text style={styles.verificationHint}>Tus datos están seguros y cifrados. Este paso toma menos de 2 minutos.</Text>
       </View>
     </View>
-  )
+  ), [docFront, docBack, docSelfie])
 
   // Componente Toast simple para mostrar mensajes
   const Toast = () => {
@@ -582,11 +576,11 @@ export default function RegisterScreen() {
         </View>
       </View>
       <StepIndicator />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {step === 1 && <Step1 />}
-        {step === 2 && <Step2 />}
-        {step === 3 && <Step3 />}
-        {step === 4 && <Step4 />}
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        {step === 1 && Step1}
+        {step === 2 && Step2}
+        {step === 3 && Step3}
+        {step === 4 && Step4}
 
         {/* Mensaje inspiracional inferior */}
         <View style={styles.bottomMessage}>
