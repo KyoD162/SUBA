@@ -47,8 +47,12 @@ const BASE_MENU_OPTIONS: MenuOption[] = [
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  // Obtener nombre para mostrar (o email si no hay nombre)
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Usuario';
+  const displayEmail = user?.email || '';
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [offersEnabled, setOffersEnabled] = useState(true);
 
@@ -138,8 +142,8 @@ export default function ProfileScreen() {
               </View>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.userNameGradient}>Jesus Rondon</Text>
-              <Text style={styles.userEmailGradient}>jesus.rondon@email.com</Text>
+              <Text style={styles.userNameGradient}>{displayName}</Text>
+              <Text style={styles.userEmailGradient}>{displayEmail}</Text>
             </View>
             <Badge label="Gold" variant="primary" />
           </View>
