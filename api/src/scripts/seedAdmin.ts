@@ -34,8 +34,8 @@ async function seedAdmin() {
   console.log('SUBA - Seed de Administrador Inicial');
   console.log('='.repeat(50));
 
-  // Conectar a MongoDB
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/suba';
+  // Conectar a MongoDB (soporta ambos nombres de variable: MONGO_URI y MONGODB_URI)
+  const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/suba';
   console.log(`\n📡 Conectando a MongoDB: ${mongoUri.replace(/\/\/.*@/, '//<credentials>@')}`);
 
   try {
