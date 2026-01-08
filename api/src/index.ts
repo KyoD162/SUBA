@@ -39,6 +39,25 @@ function validateEnvVars() {
   }
 }
 
+// Función para conectar a MongoDB con reintentos
+async function connectWithRetry(uri: string, maxRetries = 5, delay = 5000): Promise<void> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[MongoDB] Intento de conexión ${attempt}/${maxRetries}...`);
+      await mongoose.connect(uri);
+      console.log('[MongoDB] ✅ Conectado exitosamente');
+      return;
+    } catch (error) {
+      console.warn(`[MongoDB] ❌ Intento ${attempt} fallido:`, (error as Error).message);
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      console.log(`[MongoDB] Reintentando en ${delay / 1000} segundos...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 async function start() {
   // Validar variables de entorno
   validateEnvVars();
@@ -48,7 +67,8 @@ async function start() {
     process.exit(1);
   }
 
-  await mongoose.connect(MONGO_URI);
+  // Conectar a MongoDB con reintentos
+  await connectWithRetry(MONGO_URI);
 
   const app = express();
   const server = http.createServer(app);

@@ -1,4 +1,5 @@
-import mongoose, { Schema } from 'mongoose';
+import { Schema } from 'mongoose';
+
 import { User, IUser } from './User';
 
 export interface IDriver extends IUser {

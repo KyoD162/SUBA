@@ -1,6 +1,7 @@
 "use client"
 
-import React, { createContext, useContext, useMemo, useState } from "react"
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { useAuth } from "./AuthContext"
 
 export type PassStatus = "active" | "expiring_soon" | "expired"
 
@@ -48,6 +49,9 @@ function formatDate(d = new Date()) {
 }
 
 export function TicketsProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth()
+  const previousIsAuthenticated = useRef(isAuthenticated)
+
   const [currentPass, setCurrentPass] = useState<ActivePass | null>(null)
   const [history, setHistory] = useState<TicketHistoryItem[]>([
     // seed minimal history for realism
@@ -128,6 +132,14 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
     setCurrentPass(null)
     setHistory([])
   }
+
+  // Limpia datos sensibles al cerrar sesión (solo en transición true -> false)
+  useEffect(() => {
+    if (previousIsAuthenticated.current && !isAuthenticated) {
+      clearPasses()
+    }
+    previousIsAuthenticated.current = isAuthenticated
+  }, [isAuthenticated])
 
   const value = useMemo(() => ({ currentPass, history, purchasePass, clearPasses }), [currentPass, history])
   return <TicketsContext.Provider value={value}>{children}</TicketsContext.Provider>
