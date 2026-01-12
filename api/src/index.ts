@@ -97,9 +97,9 @@ async function start() {
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  server.listen(PORT, () => {
-    console.log(`API listening on http://localhost:${PORT}`);
-  });
+  server.listen(PORT, "0.0.0.0", () => {
+  console.log(`API listening on http://0.0.0.0:${PORT}`);
+});
 }
 
 start().catch((err) => {
