@@ -1,15 +1,22 @@
-import type { ExpoConfig } from 'expo/config'
+import type { ExpoConfig, ConfigContext } from 'expo/config'
 
+// URL del API - se puede sobrescribir con EXPO_PUBLIC_API_URL
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'
 
-export default function defineConfig(): ExpoConfig {
+// Google Maps API Keys (usar variables de entorno en producción)
+const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+
+export default function defineConfig({ config }: ConfigContext): ExpoConfig {
   return {
+    ...config,
     name: 'SUBA',
     slug: 'suba-transport',
     scheme: 'suba',
     version: '1.0.0',
     orientation: 'portrait',
     userInterfaceStyle: 'light',
+    // Nuevo SDK de Expo
+    newArchEnabled: true,
     splash: {
       resizeMode: 'contain',
       backgroundColor: '#184E77',
@@ -17,17 +24,19 @@ export default function defineConfig(): ExpoConfig {
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
+      bundleIdentifier: 'com.suba.transport',
       config: {
-        googleMapsApiKey: 'YOUR_IOS_GOOGLE_MAPS_API_KEY',
+        googleMapsApiKey: GOOGLE_MAPS_API_KEY,
       },
     },
     android: {
+      package: 'com.suba.transport',
       adaptiveIcon: {
         backgroundColor: '#184E77',
       },
       config: {
         googleMaps: {
-          apiKey: 'YOUR_ANDROID_GOOGLE_MAPS_API_KEY',
+          apiKey: GOOGLE_MAPS_API_KEY,
         },
       },
     },
@@ -49,6 +58,13 @@ export default function defineConfig(): ExpoConfig {
         },
       ],
     ],
-    extra: { API_URL },
+    extra: {
+      API_URL,
+      eas: {
+        projectId: process.env.EAS_PROJECT_ID || 'your-project-id',
+      },
+    },
+    // Expo Go: permitir desarrollo sin configuración adicional
+    owner: process.env.EXPO_OWNER || undefined,
   }
 }

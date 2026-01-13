@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import 'express-async-errors';
 import http from 'http';
+import os from 'os';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -17,6 +18,20 @@ import { initSocket } from './ws/socket';
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 const ORIGIN = process.env.ORIGIN || '*';
 const MONGO_URI = process.env.MONGO_URI || '';
+
+// Obtener IP local para mostrar en desarrollo
+function getLocalIP(): string {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] || []) {
+      // Ignorar IPv6 y loopback
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
 
 // Verificar variables de entorno críticas
 function validateEnvVars() {
@@ -97,8 +112,21 @@ async function start() {
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  server.listen(PORT, () => {
-    console.log(`API listening on http://localhost:${PORT}`);
+  server.listen(PORT, '0.0.0.0', () => {
+    const localIP = getLocalIP();
+    console.log('\n===========================================');
+    console.log('🚀 SUBA API Server');
+    console.log('===========================================');
+    console.log(`📍 Local:    http://localhost:${PORT}`);
+    console.log(`📍 Network:  http://${localIP}:${PORT}`);
+    console.log(`📍 Health:   http://localhost:${PORT}/health`);
+    console.log('-------------------------------------------');
+    console.log(`🔌 WebSocket: ws://${localIP}:${PORT}/ws`);
+    console.log('===========================================');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('\n💡 Para Expo Go, usa la IP de Network en tu app');
+      console.log(`   EXPO_PUBLIC_API_URL=http://${localIP}:${PORT}\n`);
+    }
   });
 }
 
