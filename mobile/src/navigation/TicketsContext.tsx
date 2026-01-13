@@ -53,7 +53,7 @@ type TicketsContextValue = {
   // Actions
   purchasePass: (ticketTypeId: string) => Promise<ActivePass>
   refreshTickets: () => Promise<void>
-  refreshTicketTypes: () => Promise<void>
+  refreshTicketTypes: () => Promise<TicketTypeAPI[]>
   clearPasses: () => void
 }
 
@@ -156,12 +156,14 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated])
 
   // Fetch available ticket types
-  const refreshTicketTypes = useCallback(async () => {
+  const refreshTicketTypes = useCallback(async (): Promise<TicketTypeAPI[]> => {
     try {
       const types = await getTicketTypes(true)
       setAvailableTicketTypes(types)
+      return types
     } catch (error) {
       console.error('[TicketsContext] Error fetching ticket types:', error)
+      return []
     }
   }, [])
 

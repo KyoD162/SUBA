@@ -120,10 +120,12 @@ export default function PaymentCheckoutScreen() {
     const loadTypes = async () => {
       setIsLoadingTypes(true)
       try {
-        await refreshTicketTypes()
-        // If still no types after loading, use fallback
-        if (availableTicketTypes.length === 0) {
+        const types = await refreshTicketTypes()
+        // If no types returned, use fallback
+        if (!types || types.length === 0) {
           setUseFallback(true)
+        } else {
+          setUseFallback(false)
         }
       } catch {
         setUseFallback(true)

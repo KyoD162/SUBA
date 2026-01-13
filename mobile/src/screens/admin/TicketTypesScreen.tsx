@@ -99,14 +99,29 @@ export default function TicketTypesScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const [types, statsData] = await Promise.all([
-        getTicketTypes(false),
-        getTicketStats()
-      ])
+      // Load ticket types - this should always work
+      const types = await getTicketTypes(false)
       setTicketTypes(types)
-      setStats(statsData)
+      
+      // Try to load stats separately (may fail if no tickets exist)
+      try {
+        const statsData = await getTicketStats()
+        setStats(statsData)
+      } catch (statsError) {
+        console.log('Stats not available yet:', statsError)
+        // Set default stats when none exist
+        setStats({
+          totalTickets: 0,
+          activeTickets: 0,
+          usedTickets: 0,
+          expiredTickets: 0,
+          totalRevenue: 0,
+          ticketsByCategory: {}
+        })
+      }
     } catch (error) {
       console.error('Error loading data:', error)
+      Alert.alert('Error', 'No se pudieron cargar los tipos de tickets')
     } finally {
       setLoading(false)
     }

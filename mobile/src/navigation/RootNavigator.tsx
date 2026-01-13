@@ -81,7 +81,6 @@ function DriverTabNavigator() {
       screenOptions={({ route }) => {
         let iconName: keyof typeof Ionicons.glyphMap = 'map-outline'
         if (route.name === 'Trip') iconName = 'navigate-outline'
-        else if (route.name === 'ScanTicket') iconName = 'qr-code-outline'
         else if (route.name === 'DriverProfile') iconName = 'person-outline'
         return {
           headerShown: false,
@@ -107,7 +106,6 @@ function DriverTabNavigator() {
       }}
     >
       <DriverTab.Screen name="Trip" component={require('../screens/driver/DriverRouteScreen').default} options={{ title: 'Viaje' }} />
-      <DriverTab.Screen name="ScanTicket" component={require('../screens/driver/ScanTicketScreen').default} options={{ title: 'Escanear' }} />
       <DriverTab.Screen 
         name="CargarPasajero" 
         component={require('../screens/driver/CargarPasajeroScreen').default} 
@@ -131,8 +129,8 @@ function AdminTabNavigator() {
         else if (route.name === 'Rutas') iconName = 'navigate-outline'
         else if (route.name === 'Conductores') iconName = 'car-outline'
         else if (route.name === 'Usuarios') iconName = 'people-outline'
+        else if (route.name === 'Tickets') iconName = 'ticket-outline'
         else if (route.name === 'Precios') iconName = 'pricetag-outline'
-        else if (route.name === 'TicketTypes') iconName = 'ticket-outline'
         else if (route.name === 'AdminProfile') iconName = 'person-outline'
         return {
           headerShown: false,
@@ -161,8 +159,8 @@ function AdminTabNavigator() {
       <AdminTab.Screen name="Rutas" component={require('../screens/admin/RutasScreen').default} />
       <AdminTab.Screen name="Conductores" component={require('../screens/admin/ConductoresScreen').default} />
       <AdminTab.Screen name="Usuarios" component={require('../screens/admin/UsuariosScreen').default} />
+      <AdminTab.Screen name="Tickets" component={require('../screens/admin/TicketTypesScreen').default} />
       <AdminTab.Screen name="Precios" component={require('../screens/admin/PreciosScreen').default} />
-      <AdminTab.Screen name="TicketTypes" component={require('../screens/admin/TicketTypesScreen').default} options={{ title: 'Tickets' }} />
       <AdminTab.Screen name="AdminProfile" component={require('../screens/admin/AdminProfileScreen').default} options={{ title: 'Perfil' }} />
     </AdminTab.Navigator>
   )
@@ -238,14 +236,6 @@ function NavigationContent() {
                 <Stack.Screen
                   name="PaymentCheckout"
                   component={PaymentCheckoutScreen}
-                  options={{
-                    animation: "default",
-                    contentStyle: { backgroundColor: COLORS.background },
-                  }}
-                />
-                <Stack.Screen
-                  name="TicketDetail"
-                  component={require('../screens/details/TicketDetailScreen').default}
                   options={{
                     animation: "default",
                     contentStyle: { backgroundColor: COLORS.background },
