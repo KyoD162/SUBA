@@ -6,7 +6,9 @@ import {
   registerRider, registerDriver, registerAdmin,
   profile,
   refreshToken,
-  logout
+  logout,
+  getUsers,
+  getDrivers
 } from '../controllers/auth.controller';
 
 export const authRouter = Router();
@@ -33,4 +35,10 @@ authRouter.post('/logout', auth(true), logout);
 
 // Perfil del usuario autenticado
 authRouter.get('/me', auth(true), profile);
+
+// Obtener lista de usuarios (solo admins)
+authRouter.get('/users', auth(true), requireRole(['admin']), getUsers);
+
+// Obtener lista de conductores (solo admins)
+authRouter.get('/drivers', auth(true), requireRole(['admin']), getDrivers);
 

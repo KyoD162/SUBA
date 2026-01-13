@@ -10,6 +10,7 @@ export interface IDriver extends IUser {
   rating: number;
 }
 
+
 const DriverSchema = new Schema<IDriver>({
   licenseNumber: { type: String, required: true },
   vehiclePlate: { type: String, required: true },

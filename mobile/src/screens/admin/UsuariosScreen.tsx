@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Pressable, FlatList, Modal, KeyboardAvoidingView, Platform } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
@@ -12,6 +12,7 @@ import { Badge } from "../../components/Badge"
 import { Button } from "../../components/Button"
 import { CurrencyDisplay } from "../../components/CurrencyDisplay"
 import { scale } from "../../utils/responsive"
+import { getUsers } from "../../services/api"
 
 interface User {
   id: string
@@ -108,6 +109,32 @@ const UsuariosScreen: React.FC = () => {
   const [users, setUsers] = useState<User[]>(MOCK_USERS)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false)
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const fetchedUsers = await getUsers();
+        const mappedUsers: User[] = fetchedUsers.map((u: any) => ({
+          id: u._id || u.id,
+          name: u.name || 'Sin nombre',
+          email: u.email,
+          phone: u.phone || 'Sin teléfono',
+          type: u.specialDiscount === 'student' ? 'Estudiante' :
+                u.specialDiscount === 'senior' ? 'Tercera Edad' :
+                u.specialDiscount === 'disabled' ? 'Discapacidad' : 'Adulto',
+          status: 'Activo', // Assume active
+          registeredAt: new Date(u.createdAt).toLocaleDateString('es-ES'),
+          balance: 0, // Not in model
+          trips: 0, // Not in model
+        }));
+        setUsers(mappedUsers);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        // Keep mock data or show error
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const filterOptions = ["Todos los tipos", "Estudiantes", "Adultos", "Tercera Edad", "Discapacidad"]
   const userTypes = ["Estudiante", "Adulto", "Tercera Edad", "Discapacidad"]

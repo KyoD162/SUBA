@@ -1,5 +1,5 @@
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Pressable, FlatList, Modal, KeyboardAvoidingView, Platform } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
@@ -11,6 +11,7 @@ import { Badge } from "../../components/Badge"
 import { Button } from "../../components/Button"
 import { CurrencyDisplay } from "../../components/CurrencyDisplay"
 import { scale } from "../../utils/responsive"
+import { getDrivers } from "../../services/api"
 
 interface User {
   id: string
@@ -78,7 +79,30 @@ const [searchQuery, setSearchQuery] = useState("")
   const [modalMode, setModalMode] = useState<"add" | "edit">("add")
   const [users, setUsers] = useState<User[]>(MOCK_USERS)
 
-  
+  useEffect(() => {
+    const fetchDrivers = async () => {
+      try {
+        const fetchedDrivers = await getDrivers();
+        const mappedDrivers: User[] = fetchedDrivers.map((d: any) => ({
+          id: d._id || d.id,
+          name: d.name || 'Sin nombre',
+          email: d.email,
+          phone: d.phone || 'Sin teléfono',
+          status: d.isAvailable ? 'Activo' : 'Inactivo',
+          vehicle: d.vehicleModel || 'Vehículo desconocido',
+          registeredAt: new Date(d.createdAt).toLocaleDateString('es-ES'),
+          salary: 0, // Not in model
+          trips: 0, // Not in model
+        }));
+        setUsers(mappedDrivers);
+      } catch (error) {
+        console.error('Failed to fetch drivers:', error);
+        // Keep mock data or show error
+      }
+    };
+    fetchDrivers();
+  }, []);
+
   // Edit Modal State
   const [isEditModalVisible, setIsEditModalVisible] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)

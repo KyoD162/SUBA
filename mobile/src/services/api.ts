@@ -158,3 +158,25 @@ async function refreshAccessToken(): Promise<boolean> {
     return false;
   }
 }
+
+export async function getUsers() {
+  const response = await apiFetch(`${API_URL}/auth/users`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch users');
+  }
+  
+  const data = await response.json();
+  return data.users;
+}
+
+export async function getDrivers() {
+  const response = await apiFetch(`${API_URL}/auth/drivers`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch drivers');
+  }
+  
+  const data = await response.json();
+  return data.drivers;
+}

@@ -264,3 +264,23 @@ export async function logout(req: Request, res: Response) {
   return res.status(204).send();
 }
 
+export async function getUsers(req: Request, res: Response) {
+  try {
+    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    return res.json({ users });
+  } catch (error) {
+    console.error('Get users error:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+export async function getDrivers(req: Request, res: Response) {
+  try {
+    const drivers = await User.find({ role: 'driver' }).select('-password').sort({ createdAt: -1 });
+    return res.json({ drivers });
+  } catch (error) {
+    console.error('Get drivers error:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
