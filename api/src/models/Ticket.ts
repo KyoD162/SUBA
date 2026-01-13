@@ -70,12 +70,18 @@ const TicketSchema = new Schema<ITicket>(
     ticketNumber: { 
       type: String, 
       required: true, 
-      unique: true 
+      unique: true,
+      default: () => {
+        const year = new Date().getFullYear();
+        const randomPart = crypto.randomBytes(3).toString('hex').toUpperCase();
+        return `TKT-${year}-${randomPart}`;
+      }
     },
     qrCode: { 
       type: String, 
       required: true, 
-      unique: true 
+      unique: true,
+      default: () => crypto.randomBytes(16).toString('hex')
     },
     userId: { 
       type: Schema.Types.ObjectId, 
@@ -122,19 +128,7 @@ const TicketSchema = new Schema<ITicket>(
   }
 );
 
-// Generate unique ticket number
-TicketSchema.pre('save', async function(next) {
-  if (this.isNew) {
-    // Generate ticket number: TKT-YYYY-XXXXXX
-    const year = new Date().getFullYear();
-    const randomPart = crypto.randomBytes(3).toString('hex').toUpperCase();
-    this.ticketNumber = `TKT-${year}-${randomPart}`;
-    
-    // Generate QR code data (unique identifier)
-    this.qrCode = crypto.randomBytes(16).toString('hex');
-  }
-  next();
-});
+// Ticket number and qrCode are generated via default functions above
 
 // Method to check if ticket can be used
 TicketSchema.methods.canBeUsed = function(): boolean {
