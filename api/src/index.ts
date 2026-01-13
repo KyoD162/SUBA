@@ -103,6 +103,24 @@ async function start() {
   // Rate limiting general para toda la API
   app.use('/api', generalLimiter);
 
+  // Ruta raíz informativa para evitar confusiones con 404 en /
+  app.get('/', (_req, res) => {
+    const localIP = getLocalIP();
+    res.json({
+      name: 'SUBA API',
+      version: '0.1.0',
+      status: 'ok',
+      endpoints: {
+        health: `http://localhost:${PORT}/health`,
+        apiBase: `http://localhost:${PORT}/api`,
+        networkHealth: `http://${localIP}:${PORT}/health`,
+        networkApiBase: `http://${localIP}:${PORT}/api`,
+      },
+      note:
+        'Si ves esto desde el navegador, la API está en /api. La app móvil debe apuntar a /api.',
+    });
+  });
+
   app.get('/health', (_req, res) => {
     res.status(StatusCodes.OK).json({ status: 'ok' });
   });
