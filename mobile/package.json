@@ -1,7 +1,7 @@
 {
   "name": "suba-app",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "./index.js",
   "scripts": {
     "start": "expo start --port 8082",
     "start:lan": "expo start --lan --port 8082",
