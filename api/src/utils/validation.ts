@@ -228,31 +228,3 @@ export function validateLoginData(data: any): ValidationError[] {
 
   return errors;
 }
-
-/**
- * Valida los datos de registro de un admin
- */
-export function validateAdminRegistration(data: any): ValidationError[] {
-  const errors: ValidationError[] = [];
-
-  // Email
-  const emailError = validateEmail(data.email);
-  if (emailError) errors.push(emailError);
-
-  // Password
-  const passwordError = validatePassword(data.password);
-  if (passwordError) errors.push(passwordError);
-
-  // Name
-  const nameError = validateFullName(data.name);
-  if (nameError) errors.push(nameError);
-
-  // Phone
-  const phoneError = validatePhone(data.phone);
-  if (phoneError) errors.push(phoneError);
-
-  // Department (opcional)
-  // No validation needed for department as it's optional
-
-  return errors;
-}

@@ -1,5 +1,4 @@
-import { Schema } from 'mongoose';
-
+import mongoose, { Schema } from 'mongoose';
 import { User, IUser } from './User';
 
 export interface IAdmin extends IUser {

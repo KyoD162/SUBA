@@ -18,7 +18,6 @@ import { COLORS, SPACING, RADIUS, TEXT_STYLES } from '../../theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card, Badge, Button } from '../../components';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAuth } from '../../navigation/AuthContext';
 
 interface MenuOption {
   id: string;
@@ -47,30 +46,8 @@ const BASE_MENU_OPTIONS: MenuOption[] = [
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { signOut, user } = useAuth();
-  const [isSigningOut, setIsSigningOut] = useState(false);
-
-  // Obtener nombre para mostrar (o email si no hay nombre)
-  const displayName = user?.name || user?.email?.split('@')[0] || 'Usuario';
-  const displayEmail = user?.email || '';
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [offersEnabled, setOffersEnabled] = useState(true);
-
-  const handleSignOut = async () => {
-    if (isSigningOut) return;
-    setIsSigningOut(true);
-    try {
-      await signOut();
-      // Redirección segura: si ya cambió el stack por isAuthenticated, esto no hace daño.
-      try {
-        navigation.reset({ index: 0, routes: [{ name: 'Auth' as any }] });
-      } catch {
-        // Ignore navigation errors if screen unmounted
-      }
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
 
   const [preferences, setPreferences] = useState<PreferenceOption[]>([
     {
@@ -142,8 +119,8 @@ export default function ProfileScreen() {
               </View>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.userNameGradient}>{displayName}</Text>
-              <Text style={styles.userEmailGradient}>{displayEmail}</Text>
+              <Text style={styles.userNameGradient}>Jesus Rondon</Text>
+              <Text style={styles.userEmailGradient}>jesus.rondon@email.com</Text>
             </View>
             <Badge label="Gold" variant="primary" />
           </View>
@@ -270,15 +247,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Logout Button */}
-        <Button
-          title="Cerrar Sesión"
-          variant="outline"
-          size="lg"
-          style={styles.logoutButton}
-          onPress={handleSignOut}
-          loading={isSigningOut}
-          disabled={isSigningOut}
-        />
+        <Button title="Cerrar Sesión" variant="outline" size="lg" style={styles.logoutButton} />
 
         {/* App Version */}
         <View style={styles.versionContainer}>

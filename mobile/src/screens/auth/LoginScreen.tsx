@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useRef, useEffect } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Animated } from "react-native"
+import React, { useState } from "react"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES, globalStyles } from "../../theme"
@@ -10,138 +10,22 @@ import { useNavigation } from "@react-navigation/native"
 import type { RootStackParamList } from "../../navigation/types"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { authService } from "../../services/auth"
-import { validateEmail, validatePassword } from "../../utils/validation"
-
-// === COMPONENTE TOAST ===
-interface ToastProps {
-  visible: boolean
-  message: string
-  type: 'error' | 'success' | 'info'
-  onHide: () => void
-}
-
-function Toast({ visible, message, type, onHide }: ToastProps) {
-  const translateY = useRef(new Animated.Value(-100)).current
-  const opacity = useRef(new Animated.Value(0)).current
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start()
-
-      // Auto-hide después de 4 segundos
-      const timer = setTimeout(() => {
-        hideToast()
-      }, 4000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [visible])
-
-  const hideToast = () => {
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: -100,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => onHide())
-  }
-
-  if (!visible) return null
-
-  const bgColor = type === 'error' ? COLORS.error : type === 'success' ? COLORS.success : COLORS.primary
-
-  return (
-    <Animated.View 
-      style={[
-        toastStyles.container, 
-        { backgroundColor: bgColor, transform: [{ translateY }], opacity }
-      ]}
-    >
-      <Ionicons 
-        name={type === 'error' ? 'alert-circle' : type === 'success' ? 'checkmark-circle' : 'information-circle'} 
-        size={24} 
-        color={COLORS.textInverse} 
-      />
-      <Text style={toastStyles.message}>{message}</Text>
-      <TouchableOpacity onPress={hideToast}>
-        <Ionicons name="close" size={20} color={COLORS.textInverse} />
-      </TouchableOpacity>
-    </Animated.View>
-  )
-}
-
-const toastStyles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 50,
-    left: SPACING.md,
-    right: SPACING.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.md,
-    borderRadius: RADIUS.md,
-    zIndex: 1000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    gap: SPACING.sm,
-  },
-  message: {
-    flex: 1,
-    color: COLORS.textInverse,
-    ...TEXT_STYLES.bodySm,
-    fontWeight: '500',
-  },
-})
+import { validateEmail, validatePassword, sanitizeInput } from "../../utils/validation"
 
 export default function LoginScreen() {
   const { signIn } = useAuth()
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [userLoading, setUserLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   
   // Estados de error
   const [emailError, setEmailError] = useState("")
   const [passwordError, setPasswordError] = useState("")
-  
-  // Estado del toast
-  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'error' | 'success' | 'info' }>({
-    visible: false,
-    message: '',
-    type: 'error',
-  })
-
-  const showToast = (message: string, type: 'error' | 'success' | 'info' = 'error') => {
-    setToast({ visible: true, message, type })
-  }
-
-  const hideToast = () => {
-    setToast(prev => ({ ...prev, visible: false }))
-  }
 
   const handleLogin = async () => {
-    if (isLoading) return
+    if (userLoading) return
     
     // Limpiar errores previos
     setEmailError("")
@@ -161,25 +45,18 @@ export default function LoginScreen() {
       return
     }
     
-    setIsLoading(true)
+    setUserLoading(true)
     try {
-      // El servicio ya sanitiza los inputs internamente
-      const response = await authService.login({ email, password })
-      
-      // Mostrar toast de éxito brevemente
-      showToast('¡Bienvenido de nuevo!', 'success')
-      
-      // Iniciar sesión - la navegación se maneja automáticamente por AuthContext
-      await signIn(response.token, response.refreshToken, response.user)
-      
-      console.log('[LOGIN] Login exitoso, rol:', response.user.role)
+      // Sanitizar inputs antes de enviar
+      const sanitizedEmail = sanitizeInput(email.toLowerCase())
+      // El backend detecta automáticamente el rol del usuario
+      const response = await authService.login({ email: sanitizedEmail, password });
+      // response contains { token, refreshToken, user: { id, email, role, name } }
+      await signIn(response.token, response.refreshToken, response.user);
     } catch (error: any) {
-      console.error('[LOGIN] Error:', error)
-      // Usar el mensaje amigable del servicio de autenticación
-      const errorMessage = authService.getErrorMessage(error)
-      showToast(errorMessage, 'error')
+      Alert.alert("Error", error.message || "Credenciales inválidas")
     } finally {
-      setIsLoading(false)
+      setUserLoading(false)
     }
   }
   
@@ -201,14 +78,6 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
-      {/* Toast de notificación */}
-      <Toast 
-        visible={toast.visible} 
-        message={toast.message} 
-        type={toast.type} 
-        onHide={hideToast} 
-      />
-      
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoid}
@@ -243,7 +112,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                editable={!isLoading}
+                editable={!userLoading}
               />
             </View>
             {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
@@ -263,7 +132,7 @@ export default function LoginScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
-                editable={!isLoading}
+                editable={!userLoading}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Ionicons
@@ -283,16 +152,12 @@ export default function LoginScreen() {
 
           {/* Login Button */}
           <TouchableOpacity
-            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+            style={[styles.loginButton, userLoading && styles.loginButtonDisabled]}
             onPress={handleLogin}
-            disabled={isLoading}
-            activeOpacity={0.8}
+            disabled={userLoading}
           >
-            {isLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color={COLORS.textInverse} size="small" />
-                <Text style={styles.loadingText}>Iniciando sesión...</Text>
-              </View>
+            {userLoading ? (
+              <ActivityIndicator color={COLORS.textInverse} />
             ) : (
               <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
             )}
@@ -408,7 +273,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
-    minHeight: 56,
   },
   loginButtonDisabled: {
     opacity: 0.7,
@@ -416,16 +280,6 @@ const styles = StyleSheet.create({
   loginButtonText: {
     ...TEXT_STYLES.subtitle,
     color: COLORS.textInverse,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  loadingText: {
-    ...TEXT_STYLES.bodySm,
-    color: COLORS.textInverse,
-    fontWeight: '500',
   },
   footer: {
     flexDirection: "row",

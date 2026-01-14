@@ -1,5 +1,4 @@
 import { Router } from 'express';
-
 import { authRouter } from './auth.routes';
 import { tripRouter } from './trip.routes';
 import { routeRouter } from './route.routes';

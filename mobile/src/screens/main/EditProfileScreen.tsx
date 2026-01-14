@@ -18,17 +18,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, Input, Button, SelectField } from '../../components';
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from '../../theme';
 import type { RootStackParamList } from '../../navigation/types';
-import { useAuth } from '../../navigation/AuthContext';
 import React from 'react';
 
-// Valores por defecto (se sobrescriben con datos del usuario)
-const defaultProfile = {
-  fullName: '',
-  email: '',
-  phone: '',
-  documentId: '',
+const initialProfile = {
+  fullName: 'Jesus Rondon',
+  email: 'jesus.rondon@email.com',
+  phone: '+58 424 555 1234',
+  documentId: 'V-12.345.678',
   city: 'Puerto Ordaz',
-  bio: '',
+  bio: 'Ingeniero de software apasionado por mejorar la movilidad urbana.',
 };
 
 const initialPreferences = {
@@ -51,26 +49,14 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?[0-9\s-]{8,15}$/;
 const documentRegex = /^[VEP]-\d{2}\.\d{3}\.\d{3}$/i;
 
-type ProfileForm = typeof defaultProfile;
+type ProfileForm = typeof initialProfile;
 
 type PreferenceForm = typeof initialPreferences;
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { user } = useAuth();
-  
-  // Inicializar el perfil con los datos reales del usuario
-  const userProfile: ProfileForm = {
-    fullName: user?.name || '',
-    email: user?.email || '',
-    phone: '',
-    documentId: '',
-    city: 'Puerto Ordaz',
-    bio: '',
-  };
-  
-  const [profile, setProfile] = useState<ProfileForm>(userProfile);
-  const [form, setForm] = useState<ProfileForm>(userProfile);
+  const [profile, setProfile] = useState<ProfileForm>(initialProfile);
+  const [form, setForm] = useState<ProfileForm>(initialProfile);
   const [preferences, setPreferences] = useState<PreferenceForm>(initialPreferences);
   const [preferenceDraft, setPreferenceDraft] = useState<PreferenceForm>(initialPreferences);
   const [saving, setSaving] = useState(false);

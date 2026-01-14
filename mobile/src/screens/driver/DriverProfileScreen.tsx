@@ -8,10 +8,7 @@ import { useAuth } from '../../navigation/AuthContext'
 import { Card } from '../../components'
 
 export default function DriverProfileScreen() {
-  const { signOut, user } = useAuth()
-  
-  // Nombre del conductor o fallback
-  const driverName = user?.name || 'Conductor';
+  const { signOut } = useAuth()
 
   const stats = [
     { label: 'Viajes Hoy', value: '3', icon: 'calendar-outline' },
@@ -31,8 +28,8 @@ export default function DriverProfileScreen() {
               </View>
             </View>
           </View>
-          <Text style={styles.name}>{driverName}</Text>
-          <Text style={styles.role}>Conductor de SUBA</Text>
+          <Text style={styles.name}>Conductor Asignado</Text>
+          <Text style={styles.role}>Rol • Conductor</Text>
           <View style={styles.headerActions}>
             <TouchableOpacity style={[styles.headerBtn, styles.headerBtnGhost]}>
               <Ionicons name="help-circle-outline" size={16} color={COLORS.textInverse} />
