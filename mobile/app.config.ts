@@ -50,14 +50,14 @@ export default function defineConfig({ config }: ConfigContext): ExpoConfig {
             'Allow SUBA to access your location to show nearby routes.',
         },
       ],
-      [
-        'expo-maps',
-        {
-          requestLocationPermission: true,
-          locationPermission:
-            'Permite que SUBA use tu ubicación para mostrar rutas cercanas',
-        },
-      ],
+      // [
+      //   'expo-maps',
+      //   {
+      //     requestLocationPermission: true,
+      //     locationPermission:
+      //       'Permite que SUBA use tu ubicación para mostrar rutas cercanas',
+      //   },
+      // ],
     ],
     extra: {
       API_URL,
