@@ -381,7 +381,8 @@ export async function getAllDrivers(req: Request, res: Response) {
       page = '1', 
       limit = '20', 
       search = '', 
-      vehicle = ''
+      vehicle = '',
+      status = ''
     } = req.query;
 
     const filter: QueryFilter & { vehicleModel?: { $regex: string; $options: string }; isAvailable?: boolean } = { role: 'driver' };

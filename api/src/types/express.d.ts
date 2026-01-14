@@ -5,7 +5,7 @@ declare global {
     interface UserPayload {
       id: string;
       email?: string;
-      role?: string;
+      role?: 'rider' | 'driver' | 'admin';
     }
     interface Request {
       user?: UserPayload;

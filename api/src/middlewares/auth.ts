@@ -42,19 +42,26 @@ export function auth(required = true) {
         if (required) return res.status(401).json({ error: 'Invalid token payload' });
         return next();
       }
+
+      // Validar y tipar el rol correctamente
+      const validRoles = ['rider', 'driver', 'admin'] as const;
+      const role = validRoles.includes(payload.role as typeof validRoles[number]) 
+        ? payload.role as 'rider' | 'driver' | 'admin' 
+        : undefined;
       
       req.user = {
         id: payload.userId || payload.id || '',
         email: payload.email,
-        role: payload.role,
+        role,
       };
       
       return next();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Distinguir entre token expirado y token inválido
-      if (error.name === 'TokenExpiredError') {
+      const errorName = error instanceof Error ? error.name : '';
+      if (errorName === 'TokenExpiredError') {
         if (required) return res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
-      } else if (error.name === 'JsonWebTokenError') {
+      } else if (errorName === 'JsonWebTokenError') {
         if (required) return res.status(401).json({ error: 'Invalid token', code: 'INVALID_TOKEN' });
       } else {
         if (required) return res.status(401).json({ error: 'Token verification failed' });
@@ -91,7 +98,8 @@ export function requireRole(allowedRoles: ('rider' | 'driver' | 'admin')[]) {
       });
     }
 
-    if (!allowedRoles.includes(userRole as any)) {
+    const validRole = userRole as 'rider' | 'driver' | 'admin';
+    if (!allowedRoles.includes(validRole)) {
       console.warn(`[AUTH] requireRole: Rol '${userRole}' no tiene permiso. Requeridos: ${allowedRoles.join(', ')}`);
       return res.status(403).json({ 
         error: 'No tienes permisos para realizar esta acción', 

@@ -1,14 +1,16 @@
 import 'dotenv/config';
-import express from 'express';
 import 'express-async-errors';
+
 import http from 'http';
 import os from 'os';
+
 import cors from 'cors';
+import express from 'express';
 import helmet from 'helmet';
-import morgan from 'morgan';
-import mongoose from 'mongoose';
-import { Server } from 'socket.io';
 import { StatusCodes } from 'http-status-codes';
+import mongoose from 'mongoose';
+import morgan from 'morgan';
+import { Server } from 'socket.io';
 
 import { router as apiRouter } from './routes';
 import { notFoundHandler, errorHandler } from './middlewares/error';
