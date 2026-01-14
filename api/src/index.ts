@@ -125,6 +125,28 @@ async function start() {
     res.status(StatusCodes.OK).json({ status: 'ok' });
   });
 
+  // Punto base de la API para información rápida
+  app.get('/api', (_req, res) => {
+    const localIP = getLocalIP();
+    res.json({
+      name: 'SUBA API',
+      base: '/api',
+      version: '0.1.0',
+      auth: {
+        login: '/api/auth/login',
+        register: {
+          rider: '/api/auth/register/rider',
+          driver: '/api/auth/register/driver',
+          admin: '/api/auth/register/admin',
+        },
+      },
+      health: {
+        local: `http://localhost:${PORT}/health`,
+        network: `http://${localIP}:${PORT}/health`,
+      },
+    });
+  });
+
   app.use('/api', apiRouter);
 
   app.use(notFoundHandler);
