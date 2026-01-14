@@ -6,6 +6,9 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'
 // Google Maps API Keys (usar variables de entorno en producción)
 const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || ''
 
+// Detectar si estamos en Expo Go o en build nativo
+const IS_DEV = process.env.APP_VARIANT === 'development' || !process.env.EAS_BUILD
+
 export default function defineConfig({ config }: ConfigContext): ExpoConfig {
   return {
     ...config,
@@ -15,8 +18,8 @@ export default function defineConfig({ config }: ConfigContext): ExpoConfig {
     version: '1.0.0',
     orientation: 'portrait',
     userInterfaceStyle: 'light',
-    // Nuevo SDK de Expo
-    newArchEnabled: true,
+    // Nueva arquitectura solo para builds nativos, no para Expo Go
+    newArchEnabled: !IS_DEV,
     splash: {
       resizeMode: 'contain',
       backgroundColor: '#184E77',

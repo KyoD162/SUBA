@@ -1,4 +1,5 @@
 import React, { useEffect } from "react"
+import { Platform } from "react-native"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
@@ -10,6 +11,9 @@ import type { RootStackParamList, MainTabParamList, DriverTabParamList, AdminTab
 import { COLORS, SPACING } from "../theme"
 import { AuthProvider, useAuth } from "./AuthContext"
 import { TicketsProvider } from "./TicketsContext"
+
+// Declaración de __DEV__ para TypeScript
+declare const __DEV__: boolean
 
 // Auth screens
 import LoginScreen from "../screens/auth/LoginScreen"

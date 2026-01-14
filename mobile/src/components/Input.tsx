@@ -1,5 +1,5 @@
 import type React from "react"
-import { View, TextInput, StyleSheet, type ViewStyle, type TextInputProps } from "react-native"
+import { View, TextInput, Text, StyleSheet, type ViewStyle, type TextInputProps } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from "../theme"
 import { scale, verticalScale } from "../utils/responsive"
@@ -17,7 +17,7 @@ export const Input: React.FC<InputProps> = ({ label, icon, error, containerStyle
     <View style={containerStyle}>
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={[styles.container, error && styles.containerError]}>
-  {icon && <Ionicons name={icon} size={scale(20)} color={error ? COLORS.danger : COLORS.textTertiary} />}
+        {icon && <Ionicons name={icon} size={scale(20)} color={error ? COLORS.danger : COLORS.textTertiary} />}
         <TextInput style={styles.input} placeholderTextColor={COLORS.textTertiary} {...textInputProps} />
         {rightIcon && rightIcon}
       </View>
@@ -25,8 +25,6 @@ export const Input: React.FC<InputProps> = ({ label, icon, error, containerStyle
     </View>
   )
 }
-
-const { Text } = require("react-native")
 
 const styles = StyleSheet.create({
   label: {
