@@ -1,35 +1,59 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react"
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { useAuth } from "./AuthContext"
+import { 
+  Ticket, 
+  TicketType as TicketTypeAPI, 
+  getUserTickets, 
+  purchaseTicket as purchaseTicketAPI,
+  getTicketTypes
+} from "../services/tickets"
 
-export type PassStatus = "active" | "expiring_soon" | "expired"
+export type PassStatus = "active" | "expiring_soon" | "expired" | "used" | "cancelled"
 
 export type ActivePass = {
   id: string
   type: string
   ticketNumber: string
+  qrCode: string
+  qrData: string
   validUntil?: string
   tripsRemaining: number | "unlimited"
   status: PassStatus
-  color?: string
+  color: string
+  category: 'single' | 'multi' | 'time_based'
+  timeRemaining: number | null
+  purchasedAt: string
 }
 
 export type TicketHistoryItem = {
   id: string
   ticketId: string
   type: string
-  status: "active" | "used" | "expired"
+  status: "active" | "used" | "expired" | "cancelled"
   from?: string
   to?: string
   date: string
   time?: string
+  color: string
 }
 
 type TicketsContextValue = {
+  // Data
   currentPass: ActivePass | null
+  tickets: ActivePass[]
   history: TicketHistoryItem[]
-  purchasePass: (params: { kind: "single" | "bundle" | "unlimited"; trips?: number; priceUSD: number }) => ActivePass
+  availableTicketTypes: TicketTypeAPI[]
+  
+  // Loading states
+  isLoading: boolean
+  isPurchasing: boolean
+  
+  // Actions
+  purchasePass: (ticketTypeId: string) => Promise<ActivePass>
+  refreshTickets: () => Promise<void>
+  refreshTicketTypes: () => Promise<TicketTypeAPI[]>
   clearPasses: () => void
 }
 
@@ -41,106 +65,169 @@ export function useTickets() {
   return ctx
 }
 
-function formatDate(d = new Date()) {
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr)
   const day = d.getDate()
   const month = d.toLocaleString("es-ES", { month: "short" })
   const year = d.getFullYear()
   return `${day} ${month} ${year}`
 }
 
+function formatTime(dateStr: string) {
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+}
+
+function ticketToActivePass(ticket: Ticket): ActivePass {
+  let validUntil: string | undefined = undefined
+  
+  if (ticket.expiresAt) {
+    validUntil = formatDate(ticket.expiresAt)
+  } else if (ticket.category === 'time_based' && ticket.durationMinutes) {
+    validUntil = `${ticket.durationMinutes} minutos desde activación`
+  }
+  
+  return {
+    id: ticket.id,
+    type: ticket.name,
+    ticketNumber: ticket.ticketNumber,
+    qrCode: ticket.qrCode,
+    qrData: ticket.qrData,
+    validUntil,
+    tripsRemaining: ticket.remainingUses,
+    status: ticket.status as PassStatus,
+    color: ticket.color,
+    category: ticket.category,
+    timeRemaining: ticket.timeRemaining,
+    purchasedAt: ticket.purchasedAt
+  }
+}
+
+function ticketToHistoryItem(ticket: Ticket): TicketHistoryItem {
+  return {
+    id: `h-${ticket.id}`,
+    ticketId: ticket.ticketNumber,
+    type: ticket.name,
+    status: ticket.status as "active" | "used" | "expired" | "cancelled",
+    date: formatDate(ticket.purchasedAt),
+    time: formatTime(ticket.purchasedAt),
+    color: ticket.color
+  }
+}
+
 export function TicketsProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
   const previousIsAuthenticated = useRef(isAuthenticated)
 
-  const [currentPass, setCurrentPass] = useState<ActivePass | null>(null)
-  const [history, setHistory] = useState<TicketHistoryItem[]>([
-    // seed minimal history for realism
-    {
-      id: "h-1",
-      ticketId: "TKT-2024-156",
-      type: "Viaje Sencillo",
-      status: "used",
-      from: "Terminal Central",
-      to: "Parque Bolívar",
-      date: "5 Nov 2025",
-      time: "14:15 PM",
-    },
-    {
-      id: "h-2",
-      ticketId: "TKT-2024-155",
-      type: "Viaje Sencillo",
-      status: "used",
-      from: "Plaza de Bolívar",
-      to: "Centro Comercial",
-      date: "4 Nov 2025",
-      time: "10:30 AM",
-    },
-  ])
+  const [tickets, setTickets] = useState<ActivePass[]>([])
+  const [history, setHistory] = useState<TicketHistoryItem[]>([])
+  const [availableTicketTypes, setAvailableTicketTypes] = useState<TicketTypeAPI[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isPurchasing, setIsPurchasing] = useState(false)
 
-  const purchasePass: TicketsContextValue["purchasePass"] = ({ kind, trips, priceUSD }) => {
-    const now = new Date()
-    const idSuffix = Math.floor(100 + Math.random() * 900)
-    const ticketNumber = `TKT-${now.getFullYear()}-${idSuffix}`
+  // Get current active pass (first active ticket)
+  const currentPass = useMemo(() => {
+    return tickets.find(t => t.status === 'active') || null
+  }, [tickets])
 
-    let newPass: ActivePass
-    if (kind === "unlimited") {
-      const validUntilDate = new Date(now)
-      validUntilDate.setDate(validUntilDate.getDate() + 30)
-      newPass = {
-        id: `p-${Date.now()}`,
-        type: "Mensual Ilimitado",
-        ticketNumber,
-        validUntil: formatDate(validUntilDate),
-        tripsRemaining: "unlimited",
-        status: "active",
-      }
-    } else if (kind === "bundle") {
-      const count = Math.max(1, trips || 10)
-      newPass = {
-        id: `p-${Date.now()}`,
-        type: `${count} Viajes`,
-        ticketNumber,
-        tripsRemaining: count,
-        status: "active",
-      }
-    } else {
-      // single
-      newPass = {
-        id: `p-${Date.now()}`,
-        type: "Viaje Sencillo",
-        ticketNumber,
-        tripsRemaining: 1,
-        status: "active",
-      }
+  // Fetch user tickets from API
+  const refreshTickets = useCallback(async () => {
+    if (!isAuthenticated) return
+    
+    setIsLoading(true)
+    try {
+      const response = await getUserTickets({ limit: 50 })
+      
+      const activePasses = response.tickets
+        .filter(t => t.status === 'active')
+        .map(ticketToActivePass)
+      
+      const historyItems = response.tickets
+        .filter(t => t.status !== 'active')
+        .map(ticketToHistoryItem)
+      
+      setTickets(activePasses)
+      setHistory(historyItems)
+    } catch (error) {
+      console.error('[TicketsContext] Error fetching tickets:', error)
+    } finally {
+      setIsLoading(false)
     }
+  }, [isAuthenticated])
 
-    setCurrentPass(newPass)
-    setHistory((prev) => [
-      {
-        id: `h-${Date.now()}`,
-        ticketId: ticketNumber,
-        type: newPass.type,
-        status: "active",
-        date: formatDate(now),
-      },
-      ...prev,
-    ])
-    return newPass
-  }
+  // Fetch available ticket types
+  const refreshTicketTypes = useCallback(async (): Promise<TicketTypeAPI[]> => {
+    try {
+      const types = await getTicketTypes(true)
+      setAvailableTicketTypes(types)
+      return types
+    } catch (error) {
+      console.error('[TicketsContext] Error fetching ticket types:', error)
+      return []
+    }
+  }, [])
 
-  const clearPasses = () => {
-    setCurrentPass(null)
+  // Purchase a new ticket
+  const purchasePass = useCallback(async (ticketTypeId: string): Promise<ActivePass> => {
+    setIsPurchasing(true)
+    try {
+      const ticket = await purchaseTicketAPI(ticketTypeId)
+      const newPass = ticketToActivePass(ticket)
+      
+      // Add to tickets list
+      setTickets(prev => [newPass, ...prev])
+      
+      return newPass
+    } finally {
+      setIsPurchasing(false)
+    }
+  }, [])
+
+  const clearPasses = useCallback(() => {
+    setTickets([])
     setHistory([])
-  }
+    setAvailableTicketTypes([])
+  }, [])
 
-  // Limpia datos sensibles al cerrar sesión (solo en transición true -> false)
+  // Load tickets when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshTickets()
+      refreshTicketTypes()
+    }
+  }, [isAuthenticated, refreshTickets, refreshTicketTypes])
+
+  // Clear data on logout
   useEffect(() => {
     if (previousIsAuthenticated.current && !isAuthenticated) {
       clearPasses()
     }
     previousIsAuthenticated.current = isAuthenticated
-  }, [isAuthenticated])
+  }, [isAuthenticated, clearPasses])
 
-  const value = useMemo(() => ({ currentPass, history, purchasePass, clearPasses }), [currentPass, history])
+  const value = useMemo(() => ({ 
+    currentPass, 
+    tickets,
+    history, 
+    availableTicketTypes,
+    isLoading,
+    isPurchasing,
+    purchasePass, 
+    refreshTickets,
+    refreshTicketTypes,
+    clearPasses 
+  }), [
+    currentPass, 
+    tickets,
+    history, 
+    availableTicketTypes,
+    isLoading,
+    isPurchasing,
+    purchasePass, 
+    refreshTickets,
+    refreshTicketTypes,
+    clearPasses
+  ])
+  
   return <TicketsContext.Provider value={value}>{children}</TicketsContext.Provider>
 }

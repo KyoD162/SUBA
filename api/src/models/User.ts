@@ -7,6 +7,9 @@ export interface IUser {
   password: string;
   name?: string;
   phone?: string;
+  city?: string;
+  documentId?: string;
+  bio?: string;
   role: 'rider' | 'driver' | 'admin';
   comparePassword(candidate: string): Promise<boolean>;
   generateToken(): string;
@@ -19,6 +22,9 @@ const UserSchema = new Schema<IUser>(
     password: { type: String, required: true },
     name: { type: String },
     phone: { type: String },
+    city: { type: String },
+    documentId: { type: String },
+    bio: { type: String },
     role: { type: String, enum: ['rider', 'driver', 'admin'], default: 'rider' },
   },
   { timestamps: true, discriminatorKey: 'role' }

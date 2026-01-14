@@ -7,6 +7,38 @@ export interface ValidationError {
   message: string;
 }
 
+// Tipos para las validaciones de registro
+export interface RiderRegistrationData {
+  email?: string;
+  password?: string;
+  name?: string;
+  phone?: string;
+  specialDiscount?: string;
+}
+
+export interface DriverRegistrationData {
+  email?: string;
+  password?: string;
+  name?: string;
+  phone?: string;
+  licenseNumber?: string;
+  vehiclePlate?: string;
+  vehicleModel?: string;
+}
+
+export interface AdminRegistrationData {
+  email?: string;
+  password?: string;
+  name?: string;
+  phone?: string;
+  department?: string;
+}
+
+export interface LoginData {
+  email?: string;
+  password?: string;
+}
+
 /**
  * Valida un email
  */
@@ -116,7 +148,7 @@ export function validatePhone(phone: string): ValidationError | null {
 /**
  * Valida un campo requerido
  */
-export function validateRequired(value: any, fieldName: string): ValidationError | null {
+export function validateRequired(value: unknown, fieldName: string): ValidationError | null {
   if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
     return { field: fieldName, message: `${fieldName} es requerido` };
   }
@@ -129,10 +161,13 @@ export function validateRequired(value: any, fieldName: string): ValidationError
 export function sanitizeString(input: string): string {
   if (typeof input !== 'string') return '';
   
+  // eslint-disable-next-line no-control-regex
+  const controlCharsRegex = /[\x00-\x1F\x7F]/g;
+  
   return input
     .trim()
     // Remover caracteres de control y no imprimibles
-    .replace(/[\x00-\x1F\x7F]/g, '')
+    .replace(controlCharsRegex, '')
     // Remover múltiples espacios
     .replace(/\s+/g, ' ')
     // Escapar caracteres HTML básicos para prevenir XSS
@@ -143,15 +178,15 @@ export function sanitizeString(input: string): string {
 /**
  * Valida los datos de registro de un rider
  */
-export function validateRiderRegistration(data: any): ValidationError[] {
+export function validateRiderRegistration(data: RiderRegistrationData): ValidationError[] {
   const errors: ValidationError[] = [];
 
   // Email
-  const emailError = validateEmail(data.email);
+  const emailError = validateEmail(data.email ?? '');
   if (emailError) errors.push(emailError);
 
   // Password
-  const passwordError = validatePassword(data.password);
+  const passwordError = validatePassword(data.password ?? '');
   if (passwordError) errors.push(passwordError);
 
   // Name (opcional pero si existe validarlo)
@@ -180,23 +215,23 @@ export function validateRiderRegistration(data: any): ValidationError[] {
 /**
  * Valida los datos de registro de un driver
  */
-export function validateDriverRegistration(data: any): ValidationError[] {
+export function validateDriverRegistration(data: DriverRegistrationData): ValidationError[] {
   const errors: ValidationError[] = [];
 
   // Email
-  const emailError = validateEmail(data.email);
+  const emailError = validateEmail(data.email ?? '');
   if (emailError) errors.push(emailError);
 
   // Password
-  const passwordError = validatePassword(data.password);
+  const passwordError = validatePassword(data.password ?? '');
   if (passwordError) errors.push(passwordError);
 
   // Name
-  const nameError = validateFullName(data.name);
+  const nameError = validateFullName(data.name ?? '');
   if (nameError) errors.push(nameError);
 
   // Phone
-  const phoneError = validatePhone(data.phone);
+  const phoneError = validatePhone(data.phone ?? '');
   if (phoneError) errors.push(phoneError);
 
   // License number
@@ -217,13 +252,13 @@ export function validateDriverRegistration(data: any): ValidationError[] {
 /**
  * Valida los datos de login
  */
-export function validateLoginData(data: any): ValidationError[] {
+export function validateLoginData(data: LoginData): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  const emailError = validateEmail(data.email);
+  const emailError = validateEmail(data.email ?? '');
   if (emailError) errors.push(emailError);
 
-  const passwordError = validatePassword(data.password);
+  const passwordError = validatePassword(data.password ?? '');
   if (passwordError) errors.push(passwordError);
 
   return errors;
@@ -232,23 +267,23 @@ export function validateLoginData(data: any): ValidationError[] {
 /**
  * Valida los datos de registro de un admin
  */
-export function validateAdminRegistration(data: any): ValidationError[] {
+export function validateAdminRegistration(data: AdminRegistrationData): ValidationError[] {
   const errors: ValidationError[] = [];
 
   // Email
-  const emailError = validateEmail(data.email);
+  const emailError = validateEmail(data.email ?? '');
   if (emailError) errors.push(emailError);
 
   // Password
-  const passwordError = validatePassword(data.password);
+  const passwordError = validatePassword(data.password ?? '');
   if (passwordError) errors.push(passwordError);
 
   // Name
-  const nameError = validateFullName(data.name);
+  const nameError = validateFullName(data.name ?? '');
   if (nameError) errors.push(nameError);
 
   // Phone
-  const phoneError = validatePhone(data.phone);
+  const phoneError = validatePhone(data.phone ?? '');
   if (phoneError) errors.push(phoneError);
 
   // Department (opcional)

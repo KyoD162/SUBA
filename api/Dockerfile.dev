@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1
+# Dockerfile para desarrollo con hot-reload
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Instalar dependencias incluyendo devDependencies
+COPY package.json ./
+RUN npm install
+
+# Copiar configuración TypeScript
+COPY tsconfig*.json ./
+
+# El código fuente se monta como volumen para hot-reload
+# No copiar src/ aquí
+
+EXPOSE 4000
+
+# Usar tsx watch para desarrollo con hot-reload
+CMD ["npm", "run", "dev"]

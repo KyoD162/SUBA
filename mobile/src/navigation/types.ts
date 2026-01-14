@@ -13,6 +13,7 @@ export type AdminTabParamList = {
   Rutas: undefined
   Conductores: undefined
   Usuarios: undefined
+  Tickets: undefined
   Precios: undefined
   AdminProfile: undefined
 }

@@ -129,6 +129,7 @@ function AdminTabNavigator() {
         else if (route.name === 'Rutas') iconName = 'navigate-outline'
         else if (route.name === 'Conductores') iconName = 'car-outline'
         else if (route.name === 'Usuarios') iconName = 'people-outline'
+        else if (route.name === 'Tickets') iconName = 'ticket-outline'
         else if (route.name === 'Precios') iconName = 'pricetag-outline'
         else if (route.name === 'AdminProfile') iconName = 'person-outline'
         return {
@@ -158,6 +159,7 @@ function AdminTabNavigator() {
       <AdminTab.Screen name="Rutas" component={require('../screens/admin/RutasScreen').default} />
       <AdminTab.Screen name="Conductores" component={require('../screens/admin/ConductoresScreen').default} />
       <AdminTab.Screen name="Usuarios" component={require('../screens/admin/UsuariosScreen').default} />
+      <AdminTab.Screen name="Tickets" component={require('../screens/admin/TicketTypesScreen').default} />
       <AdminTab.Screen name="Precios" component={require('../screens/admin/PreciosScreen').default} />
       <AdminTab.Screen name="AdminProfile" component={require('../screens/admin/AdminProfileScreen').default} options={{ title: 'Perfil' }} />
     </AdminTab.Navigator>

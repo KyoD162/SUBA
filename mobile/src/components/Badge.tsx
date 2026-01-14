@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, type ViewStyle, type TextStyle } from "react-na
 import { COLORS, SPACING, RADIUS, TEXT_STYLES } from "../theme"
 import { scale, verticalScale } from "../utils/responsive"
 
-type BadgeVariant = "primary" | "success" | "warning" | "danger" | "neutral"
+export type BadgeVariant = "primary" | "success" | "warning" | "danger" | "neutral" | "info" | "secondary"
 type BadgeSize = "sm" | "md"
 
 interface BadgeProps {
@@ -20,6 +20,8 @@ const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
   warning: { bg: COLORS.warning, text: COLORS.textInverse },
   danger: { bg: COLORS.danger, text: COLORS.textInverse },
   neutral: { bg: COLORS.border, text: COLORS.text },
+  info: { bg: COLORS.primaryDark, text: COLORS.textInverse },
+  secondary: { bg: COLORS.disabled, text: COLORS.textSecondary },
 }
 
 export const Badge: React.FC<BadgeProps> = ({ label, variant = "neutral", size = "md", style, textStyle }) => {

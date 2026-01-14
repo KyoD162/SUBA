@@ -1,22 +1,88 @@
 version: '3.9'
+
 services:
+  # ============================================
+  # MongoDB - Base de datos
+  # ============================================
   mongo:
     image: mongo:7
+    container_name: suba-mongo
     restart: unless-stopped
     ports:
       - '27017:27017'
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============================================
+  # API Backend - Node.js/Express
+  # ============================================
   api:
     build: ./api
+    container_name: suba-api
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    env_file:
+      - ./api/.env
     environment:
       - PORT=4000
       - MONGO_URI=mongodb://mongo:27017/suba
-      - JWT_SECRET=supersecret
-      - ORIGIN=http://localhost:8081
+      # NODE_ENV se puede sobrescribir en .env
+      - NODE_ENV=${NODE_ENV:-development}
     ports:
       - '4000:4000'
+    # En desarrollo, montar código para hot-reload
+    volumes:
+      - ./api/src:/app/src:ro
+    restart: unless-stopped
+    # Para desarrollo: usar imagen con dependencias de dev
+    profiles:
+      - prod
+
+  # ============================================
+  # API Backend - Desarrollo (con hot-reload)
+  # ============================================
+  api-dev:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    container_name: suba-api-dev
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - ./api/.env
+    environment:
+      - PORT=4000
+      - MONGO_URI=mongodb://mongo:27017/suba
+      - NODE_ENV=development
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./api/src:/app/src
+      - ./api/package.json:/app/package.json:ro
+    restart: unless-stopped
+    profiles:
+      - dev
+
 volumes:
   mongo-data:
+
+# ============================================
+# Uso:
+# ============================================
+# Desarrollo (con hot-reload):
+#   docker compose --profile dev up
+#
+# Producción:
+#   docker compose --profile prod up
+#
+# Solo MongoDB (para desarrollo local):
+#   docker compose up mongo
+# ============================================
