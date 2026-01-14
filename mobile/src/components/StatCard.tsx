@@ -10,7 +10,7 @@ interface StatCardProps {
   value?: string | number
   valueNode?: React.ReactNode
   trend?: string
-  trendDirection?: "up" | "down"
+  trendDirection?: "up" | "down" | "neutral"
   color?: string
   style?: ViewStyle
 }
@@ -36,7 +36,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       
       {valueNode ? valueNode : <Text style={styles.value}>{value}</Text>}
       
-      {trend && (
+      {trend && trendDirection !== "neutral" && (
         <View style={styles.trendContainer}>
           <Ionicons 
             name={trendDirection === "up" ? "trending-up" : "trending-down"} 

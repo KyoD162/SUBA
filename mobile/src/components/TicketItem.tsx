@@ -7,7 +7,7 @@ import { scale, verticalScale } from "../utils/responsive"
 interface TicketItemProps {
   ticketId: string
   type: string
-  status: "active" | "used" | "expired"
+  status: "active" | "used" | "expired" | "cancelled"
   from?: string
   to?: string
   date: string
@@ -20,6 +20,7 @@ const statusConfig = {
   active: { color: COLORS.success, label: "Activo" },
   used: { color: COLORS.warning, label: "Usado" },
   expired: { color: COLORS.danger, label: "Vencido" },
+  cancelled: { color: COLORS.textTertiary, label: "Cancelado" },
 }
 
 export const TicketItem: React.FC<TicketItemProps> = ({

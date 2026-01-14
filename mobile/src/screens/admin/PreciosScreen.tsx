@@ -1,6 +1,6 @@
-import React, { useState } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { StyleSheet, View, Text, Alert, Switch, ScrollView, TouchableOpacity, TextInput } from "react-native"
+import { StyleSheet, View, Text, Alert, Switch, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import Slider from "@react-native-community/slider"
 import { COLORS, globalStyles, SPACING, TEXT_STYLES, RADIUS } from "../../theme"
@@ -8,6 +8,7 @@ import AdminHeader from "../../components/AdminHeader"
 import { Card } from "../../components/Card"
 import { Button } from "../../components/Button"
 import { Input } from "../../components/Input"
+import { getPricing, updatePricing, PricingConfig } from "../../services/admin"
 
 interface DiscountCardProps {
   title: string
@@ -114,8 +115,12 @@ const DiscountCard: React.FC<DiscountCardProps> = ({
 }
 
 const PreciosScreen: React.FC = () => {
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [ticketPrice, setTicketPrice] = useState("5.00")
   const [bsPrice, setBsPrice] = useState("180.00")
+  const [exchangeRate, setExchangeRate] = useState(36.50)
   const [isEditing, setIsEditing] = useState(false)
   const [newPrice, setNewPrice] = useState("")
   const [newBsPrice, setNewBsPrice] = useState("")
@@ -127,6 +132,33 @@ const PreciosScreen: React.FC = () => {
     senior: { active: true, discount: 50 },
     disability: { active: true, discount: 50 },
   })
+
+  const loadPricing = useCallback(async () => {
+    try {
+      const data = await getPricing()
+      setTicketPrice(data.basePrice.toFixed(2))
+      setBsPrice(data.bsPrice.toFixed(2))
+      setExchangeRate(data.exchangeRate)
+      if (data.discounts) {
+        setDiscounts(data.discounts)
+      }
+    } catch (error: any) {
+      console.error('Error loading pricing:', error)
+      // Keep default values
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadPricing()
+  }, [loadPricing])
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await loadPricing()
+    setRefreshing(false)
+  }
 
   const updateDiscount = (type: keyof typeof discounts, field: 'active' | 'discount', value: boolean | number) => {
     setDiscounts(prev => ({
@@ -144,7 +176,7 @@ const PreciosScreen: React.FC = () => {
     setIsEditing(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!newPrice || isNaN(Number(newPrice))) {
       Alert.alert("Error", "Por favor ingrese un precio en USD válido")
       return
@@ -153,16 +185,61 @@ const PreciosScreen: React.FC = () => {
       Alert.alert("Error", "Por favor ingrese un precio en Bs válido")
       return
     }
-    setTicketPrice(parseFloat(newPrice).toFixed(2))
-    setBsPrice(parseFloat(newBsPrice).toFixed(2))
-    setIsEditing(false)
-    Alert.alert("Éxito", "Precios actualizados correctamente")
+    
+    setSaving(true)
+    try {
+      const newExchangeRate = parseFloat(newBsPrice) / parseFloat(newPrice)
+      await updatePricing({
+        basePrice: parseFloat(newPrice),
+        exchangeRate: newExchangeRate,
+        discounts
+      })
+      setTicketPrice(parseFloat(newPrice).toFixed(2))
+      setBsPrice(parseFloat(newBsPrice).toFixed(2))
+      setExchangeRate(newExchangeRate)
+      setIsEditing(false)
+      Alert.alert("Éxito", "Precios actualizados correctamente")
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "No se pudieron guardar los precios")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveDiscounts = async () => {
+    setSaving(true)
+    try {
+      await updatePricing({
+        basePrice: parseFloat(ticketPrice),
+        exchangeRate,
+        discounts
+      })
+      Alert.alert("Éxito", "Configuración guardada correctamente")
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "No se pudo guardar la configuración")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleCancel = () => {
     setIsEditing(false)
     setNewPrice("")
     setNewBsPrice("")
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={[globalStyles.screenPadding, { flex: 1 }]}>
+          <AdminHeader name="Admin" />
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Cargando precios...</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    )
   }
 
   return (
@@ -174,6 +251,9 @@ const PreciosScreen: React.FC = () => {
           showsVerticalScrollIndicator={false} 
           contentContainerStyle={{ paddingBottom: SPACING.xl }}
           style={{ flex: 1 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
+          }
         >
           <View style={styles.content}>
             <Text style={styles.title}>Gestión de Precios</Text>
@@ -209,12 +289,14 @@ const PreciosScreen: React.FC = () => {
                       variant="outline" 
                       style={styles.button}
                       size="sm"
+                      disabled={saving}
                     />
                     <Button 
-                      title="Guardar" 
+                      title={saving ? "Guardando..." : "Guardar"}
                       onPress={handleSave} 
                       style={styles.button}
                       size="sm"
+                      disabled={saving}
                     />
                   </View>
                 </View>
@@ -291,10 +373,11 @@ const PreciosScreen: React.FC = () => {
             </View>
 
             <Button
-              title="Guardar Cambios"
-              onPress={() => Alert.alert("Éxito", "Configuración guardada correctamente")}
+              title={saving ? "Guardando..." : "Guardar Cambios"}
+              onPress={handleSaveDiscounts}
               style={styles.saveButton}
               size="lg"
+              disabled={saving}
             />
           </View>
         </ScrollView>
@@ -486,6 +569,15 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: SPACING.lg,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: SPACING.md,
+    color: COLORS.textSecondary,
   },
 })
 

@@ -4,44 +4,124 @@ import { COLORS, SPACING, RADIUS, TEXT_STYLES } from "../theme"
 import { scale } from "../utils/responsive"
 import { Badge } from "./Badge"
 
-interface ActivityItem {
+interface UserItem {
   id: string
-  route: string
-  driver: string
-  status: "active" | "completed"
-  passengers: number
+  name?: string
+  email: string
+  type?: string
 }
 
-const RECENT_ACTIVITY: ActivityItem[] = [
+interface TicketItem {
+  id: string
+  ticketNumber: string
+  name: string
+  price: number
+  status: string
+  purchasedAt: string
+  user?: {
+    name?: string
+    email: string
+  }
+}
+
+interface Props {
+  users?: UserItem[]
+  tickets?: TicketItem[]
+}
+
+const DEFAULT_ACTIVITY = [
   { id: "1", route: "Ruta A1", driver: "Juan Pérez", status: "active", passengers: 32 },
   { id: "2", route: "Ruta B5", driver: "María García", status: "active", passengers: 28 },
   { id: "3", route: "Ruta R3", driver: "Carlos López", status: "completed", passengers: 45 },
   { id: "4", route: "Ruta R4", driver: "Ana Martínez", status: "active", passengers: 19 },
 ]
 
-export const RecentActivityTable: React.FC = () => {
-  const renderItem = ({ item }: { item: ActivityItem }) => (
-    <View style={styles.row}>
-      <View style={styles.colRoute}>
-        <Text style={styles.cellTextBold}>{item.route}</Text>
-      </View>
-      <View style={styles.colDriver}>
-        <Text style={styles.cellText}>{item.driver}</Text>
-      </View>
-      <View style={styles.colStatus}>
-        <Badge
-          label={item.status === "active" ? "En curso" : "Finalizado"}
-          variant={item.status === "active" ? "success" : "neutral"}
-          size="sm"
-          textStyle={{ fontSize: 10 }}
-        />
-      </View>
-      <View style={styles.colPassengers}>
-        <Text style={styles.cellText}>{item.passengers}</Text>
-      </View>
-    </View>
-  )
+export const RecentActivityTable: React.FC<Props> = ({ users, tickets }) => {
+  // If we have real users data, show users table
+  if (users && users.length > 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Usuarios Recientes</Text>
+        
+        <View style={styles.header}>
+          <Text style={[styles.headerText, styles.colName]}>Nombre</Text>
+          <Text style={[styles.headerText, styles.colEmail]}>Email</Text>
+          <Text style={[styles.headerText, styles.colType]}>Tipo</Text>
+        </View>
 
+        <View style={styles.listContainer}>
+          {users.slice(0, 5).map((user) => (
+            <React.Fragment key={user.id}>
+              <View style={styles.row}>
+                <View style={styles.colName}>
+                  <Text style={styles.cellTextBold}>{user.name || 'Sin nombre'}</Text>
+                </View>
+                <View style={styles.colEmail}>
+                  <Text style={styles.cellText} numberOfLines={1}>{user.email}</Text>
+                </View>
+                <View style={styles.colType}>
+                  <Badge
+                    label={user.type || 'Usuario'}
+                    variant="success"
+                    size="sm"
+                    textStyle={{ fontSize: 10 }}
+                  />
+                </View>
+              </View>
+              <View style={styles.divider} />
+            </React.Fragment>
+          ))}
+        </View>
+      </View>
+    )
+  }
+
+  // If we have tickets data, show tickets table
+  if (tickets && tickets.length > 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Tickets Recientes</Text>
+        
+        <View style={styles.header}>
+          <Text style={[styles.headerText, styles.colTicket]}>Ticket</Text>
+          <Text style={[styles.headerText, styles.colUser]}>Usuario</Text>
+          <Text style={[styles.headerText, styles.colStatus]}>Estado</Text>
+          <Text style={[styles.headerText, styles.colPrice]}>Precio</Text>
+        </View>
+
+        <View style={styles.listContainer}>
+          {tickets.slice(0, 5).map((ticket) => (
+            <React.Fragment key={ticket.id}>
+              <View style={styles.row}>
+                <View style={styles.colTicket}>
+                  <Text style={styles.cellTextBold}>{ticket.name}</Text>
+                </View>
+                <View style={styles.colUser}>
+                  <Text style={styles.cellText} numberOfLines={1}>
+                    {ticket.user?.name || ticket.user?.email || 'N/A'}
+                  </Text>
+                </View>
+                <View style={styles.colStatus}>
+                  <Badge
+                    label={ticket.status === "active" ? "Activo" : ticket.status}
+                    variant={ticket.status === "active" ? "success" : "neutral"}
+                    size="sm"
+                    textStyle={{ fontSize: 10 }}
+                  />
+                </View>
+                <View style={styles.colPrice}>
+                  <Text style={styles.cellText}>${ticket.price.toFixed(2)}</Text>
+                </View>
+              </View>
+              <View style={styles.divider} />
+            </React.Fragment>
+          ))}
+        </View>
+      </View>
+    )
+  }
+
+  // Default fallback - show demo data
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Actividad Reciente</Text>
@@ -54,9 +134,27 @@ export const RecentActivityTable: React.FC = () => {
       </View>
 
       <View style={styles.listContainer}>
-        {RECENT_ACTIVITY.map((item) => (
+        {DEFAULT_ACTIVITY.map((item) => (
           <React.Fragment key={item.id}>
-            {renderItem({ item })}
+            <View style={styles.row}>
+              <View style={styles.colRoute}>
+                <Text style={styles.cellTextBold}>{item.route}</Text>
+              </View>
+              <View style={styles.colDriver}>
+                <Text style={styles.cellText}>{item.driver}</Text>
+              </View>
+              <View style={styles.colStatus}>
+                <Badge
+                  label={item.status === "active" ? "En curso" : "Finalizado"}
+                  variant={item.status === "active" ? "success" : "neutral"}
+                  size="sm"
+                  textStyle={{ fontSize: 10 }}
+                />
+              </View>
+              <View style={styles.colPassengers}>
+                <Text style={styles.cellText}>{item.passengers}</Text>
+              </View>
+            </View>
             <View style={styles.divider} />
           </React.Fragment>
         ))}
@@ -119,6 +217,28 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   colPassengers: {
+    flex: 0.6,
+    alignItems: "flex-end",
+  },
+  // New columns for users table
+  colName: {
+    flex: 1,
+  },
+  colEmail: {
+    flex: 1.5,
+  },
+  colType: {
+    flex: 0.8,
+    alignItems: "flex-start",
+  },
+  // New columns for tickets table
+  colTicket: {
+    flex: 1,
+  },
+  colUser: {
+    flex: 1.2,
+  },
+  colPrice: {
     flex: 0.6,
     alignItems: "flex-end",
   },

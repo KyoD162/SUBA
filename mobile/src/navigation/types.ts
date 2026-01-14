@@ -25,6 +25,7 @@ export type RootStackParamList = {
   AdminMain: NavigatorScreenParams<AdminTabParamList>
   RouteDetail: { routeId: string }
   PaymentCheckout: { packageId: string }
+  TicketDetail: { ticketId: string }
   Register: undefined
   EditProfile: undefined
 }

@@ -180,7 +180,10 @@ export default function PaymentCheckoutScreen() {
 
   const handleGoToTickets = () => {
     setShowSuccessModal(false)
-    navigation.navigate('MainTabs', { screen: 'Tickets' } as never)
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'MainApp', params: { screen: 'Tickets' } }],
+    })
   }
 
   const calculateTotal = () => {
@@ -413,31 +416,13 @@ export default function PaymentCheckoutScreen() {
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>
-              {selectedPackage === "custom"
-                ? `Paquete ${customTrips} viaje${customTrips !== 1 ? "s" : ""}`
-                : currentPackage?.name}
+              {currentPackage?.name || 'Selecciona un paquete'}
             </Text>
             <CurrencyDisplay
-              usdAmount={selectedPackage === "custom" ? customTotal : currentPackage?.priceUSD || 0}
+              usdAmount={currentPackage?.price || 0}
               size="sm"
             />
           </View>
-
-          {selectedPackage !== "custom" && currentPackage?.discount && (
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabelDiscount}>Descuento ({currentPackage.discount}%)</Text>
-              <Text style={styles.summaryValueDiscount}>
-                -${(currentPackage.priceUSD * (currentPackage.discount / 100)).toFixed(2)} USD
-              </Text>
-            </View>
-          )}
-
-          {selectedPackage === "custom" && customDiscount > 0 && (
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabelDiscount}>Descuento ({customDiscount}%)</Text>
-              <Text style={styles.summaryValueDiscount}>-${(UNIT_PRICE_USD * customTrips * (customDiscount / 100)).toFixed(2)} USD</Text>
-            </View>
-          )}
 
           {promoCode === "SUBA2024" && (
             <View style={styles.summaryRow}>

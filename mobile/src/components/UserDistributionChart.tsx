@@ -10,7 +10,11 @@ type Slice = {
 }
 
 interface Props {
-  data?: Slice[]
+  data?: {
+    riders?: number
+    drivers?: number
+    admins?: number
+  }
   size?: number
 }
 
@@ -21,21 +25,32 @@ type SelectedSlice = Slice & {
   }
 }
 
-const defaultData: Slice[] = [
-  { label: "Estudiantes", value: 45, color: COLORS.success },
-  { label: "Adultos", value: 35, color: COLORS.primary },
-  { label: "Discapacidad", value: 10, color: COLORS.primaryDark },
-  { label: "Tercera Edad", value: 10, color: "#A9D6E5" },
-]
+const UserDistributionChart: React.FC<Props> = ({ data, size = 160 }) => {
+  // Convert data prop to slices format
+  const chartData: Slice[] = useMemo(() => {
+    if (data && (data.riders || data.drivers || data.admins)) {
+      return [
+        { label: "Pasajeros", value: data.riders || 0, color: COLORS.success },
+        { label: "Conductores", value: data.drivers || 0, color: COLORS.primary },
+        { label: "Administradores", value: data.admins || 0, color: COLORS.primaryDark },
+      ].filter(s => s.value > 0)
+    }
+    // Default data for demo
+    return [
+      { label: "Estudiantes", value: 45, color: COLORS.success },
+      { label: "Adultos", value: 35, color: COLORS.primary },
+      { label: "Discapacidad", value: 10, color: COLORS.primaryDark },
+      { label: "Tercera Edad", value: 10, color: "#A9D6E5" },
+    ]
+  }, [data])
 
-const UserDistributionChart: React.FC<Props> = ({ data = defaultData, size = 160 }) => {
-  const total = data.reduce((acc, d) => acc + d.value, 0)
+  const total = chartData.reduce((acc, d) => acc + d.value, 0)
   const radius = size / 2
   const [selectedSlice, setSelectedSlice] = useState<SelectedSlice | null>(null)
 
   const segments = useMemo(() => {
     let cumulativeAngle = 0
-    return data.map(slice => {
+    return chartData.map(slice => {
       const sliceAngle = total === 0 ? 0 : (slice.value / total) * 360
       const startAngle = cumulativeAngle
       const endAngle = cumulativeAngle + sliceAngle
@@ -48,7 +63,7 @@ const UserDistributionChart: React.FC<Props> = ({ data = defaultData, size = 160
         labelPosition: polarToCartesian(radius, radius, radius * 0.6, midAngle),
       }
     })
-  }, [data, radius, total])
+  }, [chartData, radius, total])
 
   return (
     <View style={styles.card}>
@@ -95,14 +110,14 @@ const UserDistributionChart: React.FC<Props> = ({ data = defaultData, size = 160
           )}
         </View>
         <View style={styles.legend}>
-          {data.map((s, i) => (
+          {chartData.map((s, i) => (
             <View key={i} style={styles.legendItem}>
               <View style={{ marginRight: 6 }}>
                 <Svg width={12} height={12} viewBox="0 0 12 12">
                   <Circle cx={6} cy={6} r={6} fill={s.color} />
                 </Svg>
               </View>
-              <Text style={styles.legendText}>{`${s.label} ${Math.round((s.value / total) * 100)}%`}</Text>
+              <Text style={styles.legendText}>{`${s.label} ${total > 0 ? Math.round((s.value / total) * 100) : 0}%`}</Text>
             </View>
           ))}
         </View>

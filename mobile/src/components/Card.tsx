@@ -1,12 +1,12 @@
 import type React from "react"
-import { View, StyleSheet, type ViewStyle, TouchableOpacity } from "react-native"
+import { View, StyleSheet, type ViewStyle, type StyleProp, TouchableOpacity } from "react-native"
 import { COLORS, SPACING, RADIUS } from "../theme"
 import { scale } from "../utils/responsive"
 
 interface CardProps {
   children: React.ReactNode
   onPress?: () => void
-  style?: ViewStyle
+  style?: StyleProp<ViewStyle>
   variant?: "default" | "outlined" | "elevated"
   padding?: boolean
 }
