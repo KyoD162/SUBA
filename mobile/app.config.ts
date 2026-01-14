@@ -15,8 +15,9 @@ export default function defineConfig({ config }: ConfigContext): ExpoConfig {
     version: '1.0.0',
     orientation: 'portrait',
     userInterfaceStyle: 'light',
-    // Nuevo SDK de Expo
-    newArchEnabled: true,
+    // NOTA: newArchEnabled deshabilitado para compatibilidad con Expo Go
+    // Habilitar solo para builds de desarrollo personalizados (expo prebuild)
+    // newArchEnabled: true,
     splash: {
       resizeMode: 'contain',
       backgroundColor: '#184E77',
