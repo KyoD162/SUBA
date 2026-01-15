@@ -18,8 +18,8 @@ export default function defineConfig({ config }: ConfigContext): ExpoConfig {
     version: '1.0.0',
     orientation: 'portrait',
     userInterfaceStyle: 'light',
-    // Nueva arquitectura solo para builds nativos, no para Expo Go
-    newArchEnabled: !IS_DEV,
+    // Deshabilitado para mejor compatibilidad con Expo Go
+    newArchEnabled: false,
     splash: {
       resizeMode: 'contain',
       backgroundColor: '#184E77',
@@ -50,14 +50,6 @@ export default function defineConfig({ config }: ConfigContext): ExpoConfig {
         {
           locationAlwaysAndWhenInUsePermissions:
             'Allow SUBA to access your location to show nearby routes.',
-        },
-      ],
-      [
-        'expo-maps',
-        {
-          requestLocationPermission: true,
-          locationPermission:
-            'Permite que SUBA use tu ubicación para mostrar rutas cercanas',
         },
       ],
     ],
